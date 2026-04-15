@@ -11,11 +11,6 @@ export default defineConfig({
         target: 'https://newsapi.org',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '/v2'),
-        configure: (proxy, options) => {
-          proxy.on('error', (err, req, res) => {
-            console.log('proxy error', err);
-          });
-        },
       },
     },
   },
@@ -30,5 +25,8 @@ export default defineConfig({
         },
       },
     },
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom', 'axios', 'zustand'],
   },
 });
