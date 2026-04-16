@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { FaFire, FaChartLine, FaClock } from 'react-icons/fa';
+import { FaFire } from 'react-icons/fa';
 import { newsService } from '../services/api';
 import { NewsCard } from '../components/news/NewsCard';
 import { LoaderSkeleton } from '../components/common/LoaderSkeleton';
@@ -64,34 +63,36 @@ export const TrendingPage = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="text-center mb-12">
-        <div className="inline-block p-4 bg-gradient-to-r from-orange-500 to-red-500 rounded-full mb-4">
-          <FaFire className="text-4xl text-white" />
+    <div className="container mx-auto px-4 py-6">
+      <div className="flex items-center justify-center gap-2 mb-6">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-orange-500 to-red-500 rounded-full">
+          <FaFire className="text-white text-base" />
+          <h1 className="text-white font-bold text-base">Trending</h1>
         </div>
-        <h1 className="text-4xl font-bold mb-2 dark:text-white">Trending</h1>
-        <p className="text-gray-600 dark:text-gray-400">{trendingArticles.length} trending stories</p>
+        <p className="text-gray-600 dark:text-gray-400 text-sm">
+          {trendingArticles.length} trending stories
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {trendingArticles.map((article, index) => (
           <NewsCard key={`${article.url}-${index}`} article={article} />
         ))}
       </div>
 
       {(loadingMore || hasMore) && (
-        <div ref={loaderRef} className="text-center py-8">
+        <div ref={loaderRef} className="text-center py-6">
           {loadingMore && (
             <div className="inline-flex items-center space-x-2">
-              <div className="w-6 h-6 border-2 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-gray-600 dark:text-gray-400">Loading more trending stories...</span>
+              <div className="w-5 h-5 border-2 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-gray-600 dark:text-gray-400 text-sm">Loading more trending stories...</span>
             </div>
           )}
         </div>
       )}
 
       {!hasMore && trendingArticles.length > 0 && (
-        <p className="text-center text-gray-500 dark:text-gray-400 mt-8 py-8">
+        <p className="text-center text-gray-500 dark:text-gray-400 mt-6 py-4 text-sm">
           You've reached the end of trending stories
         </p>
       )}

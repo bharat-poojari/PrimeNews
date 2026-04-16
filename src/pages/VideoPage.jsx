@@ -23,118 +23,24 @@ export const VideoPage = () => {
     { id: 'business', name: 'Business', query: 'business news' },
   ];
 
-  // YouTube API Key - Replace with your actual key or use mock data
-  const YOUTUBE_API_KEY = ''; // Leave empty to use mock data
-
-  const fetchYouTubeVideos = async (query, pageNum = 1) => {
-    try {
-      // If no API key, use enhanced mock data
-      if (!YOUTUBE_API_KEY) {
-        return getEnhancedMockVideos(query, pageNum);
-      }
-
-      const maxResults = 30;
-      const response = await fetch(
-        `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=${maxResults}&pageToken=${pageNum === 1 ? '' : pageNum}&q=${encodeURIComponent(query)}&type=video&key=${YOUTUBE_API_KEY}`
-      );
-      
-      const data = await response.json();
-      
-      if (data.items && data.items.length > 0) {
-        return {
-          videos: data.items.map(item => ({
-            id: item.id.videoId,
-            title: item.snippet.title,
-            description: item.snippet.description,
-            thumbnail: item.snippet.thumbnails.high.url,
-            channelTitle: item.snippet.channelTitle,
-            publishedAt: item.snippet.publishedAt,
-            url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
-            source: { name: 'YouTube' }
-          })),
-          nextPageToken: data.nextPageToken,
-          hasMore: !!data.nextPageToken
-        };
-      }
-      return { videos: getEnhancedMockVideos(query, pageNum).videos, hasMore: pageNum < 5 };
-    } catch (error) {
-      console.error('Failed to fetch YouTube videos:', error);
-      return { videos: getEnhancedMockVideos(query, pageNum).videos, hasMore: pageNum < 5 };
-    }
-  };
-
-  const getEnhancedMockVideos = (query, pageNum = 1) => {
-    const allMockVideos = {
-      all: Array(50).fill().map((_, i) => ({
-        id: `mock-all-${i}`,
-        title: `News Update ${i + 1}: Latest developments and breaking stories from around the world`,
-        description: `Comprehensive coverage of today's most important news events. This video brings you the latest updates on global affairs, politics, economy, and more. Stay informed with our detailed reporting.`,
-        thumbnail: `https://picsum.photos/id/${(i % 100) + 1}/400/225`,
-        channelTitle: 'Global News Network',
-        publishedAt: new Date(Date.now() - i * 3600000).toISOString(),
-        url: `https://www.youtube.com/watch?v=dQw4w9WgXcQ`,
-        source: { name: 'YouTube' }
-      })),
-      news: Array(50).fill().map((_, i) => ({
-        id: `mock-news-${i}`,
-        title: `Breaking News ${i + 1}: Major events and important announcements shaping our world`,
-        description: `Live coverage and analysis of the most significant news stories of the day. Expert commentary and on-the-ground reporting.`,
-        thumbnail: `https://picsum.photos/id/${(i % 100) + 104}/400/225`,
-        channelTitle: 'News Channel',
-        publishedAt: new Date(Date.now() - i * 3600000).toISOString(),
-        url: `https://www.youtube.com/watch?v=dQw4w9WgXcQ`,
-        source: { name: 'YouTube' }
-      })),
-      sports: Array(50).fill().map((_, i) => ({
-        id: `mock-sports-${i}`,
-        title: `Sports Highlights ${i + 1}: Best moments, top plays, and championship updates`,
-        description: `Watch the most exciting moments from the world of sports. Goals, victories, and unforgettable performances.`,
-        thumbnail: `https://picsum.photos/id/${(i % 100) + 128}/400/225`,
-        channelTitle: 'Sports Central',
-        publishedAt: new Date(Date.now() - i * 3600000).toISOString(),
-        url: `https://www.youtube.com/watch?v=8jWw6B8D5ZI`,
-        source: { name: 'YouTube' }
-      })),
-      technology: Array(50).fill().map((_, i) => ({
-        id: `mock-tech-${i}`,
-        title: `Tech Review ${i + 1}: Latest gadgets, AI breakthroughs, and innovation updates`,
-        description: `Exploring cutting-edge technology and digital trends. Product reviews and expert analysis.`,
-        thumbnail: `https://picsum.photos/id/${(i % 100) + 0}/400/225`,
-        channelTitle: 'Tech Today',
-        publishedAt: new Date(Date.now() - i * 3600000).toISOString(),
-        url: `https://www.youtube.com/watch?v=7rL5_3kqQj8`,
-        source: { name: 'YouTube' }
-      })),
-      entertainment: Array(50).fill().map((_, i) => ({
-        id: `mock-ent-${i}`,
-        title: `Entertainment Buzz ${i + 1}: Movie trailers, celebrity news, and pop culture`,
-        description: `Latest updates from Hollywood and the entertainment industry. Interviews and behind-the-scenes content.`,
-        thumbnail: `https://picsum.photos/id/${(i % 100) + 106}/400/225`,
-        channelTitle: 'Entertainment Weekly',
-        publishedAt: new Date(Date.now() - i * 3600000).toISOString(),
-        url: `https://www.youtube.com/watch?v=9bZkp7q19f0`,
-        source: { name: 'YouTube' }
-      })),
-      business: Array(50).fill().map((_, i) => ({
-        id: `mock-biz-${i}`,
-        title: `Market Report ${i + 1}: Stock updates, economic trends, and financial insights`,
-        description: `Comprehensive analysis of global markets, business strategies, and economic indicators.`,
-        thumbnail: `https://picsum.photos/id/${(i % 100) + 26}/400/225`,
-        channelTitle: 'Business Daily',
-        publishedAt: new Date(Date.now() - i * 3600000).toISOString(),
-        url: `https://www.youtube.com/watch?v=2rJ6KjW8Y6M`,
-        source: { name: 'YouTube' }
-      }))
-    };
-
-    const categoryKey = selectedCategory === 'all' ? 'all' : selectedCategory;
-    const categoryVideos = allMockVideos[categoryKey] || allMockVideos.all;
+  const getMockVideos = (query, pageNum = 1) => {
+    const allMockVideos = Array(50).fill().map((_, i) => ({
+      id: `mock-${i}`,
+      title: `${query || 'News'} Update ${i + 1}: Latest developments and breaking stories from around the world`,
+      description: `Comprehensive coverage of today's most important news events. This video brings you the latest updates on global affairs, politics, economy, and more.`,
+      thumbnail: `https://picsum.photos/id/${(i % 100) + 1}/400/225`,
+      channelTitle: 'Global News Network',
+      publishedAt: new Date(Date.now() - i * 3600000).toISOString(),
+      url: `https://www.youtube.com/watch?v=dQw4w9WgXcQ`,
+      source: { name: 'YouTube' }
+    }));
+    
     const startIdx = (pageNum - 1) * 30;
     const endIdx = startIdx + 30;
     
     return {
-      videos: categoryVideos.slice(startIdx, endIdx),
-      hasMore: endIdx < categoryVideos.length
+      videos: allMockVideos.slice(startIdx, endIdx),
+      hasMore: endIdx < allMockVideos.length
     };
   };
 
@@ -148,7 +54,7 @@ export const VideoPage = () => {
         query = searchQuery || category.query;
       }
       
-      const result = await fetchYouTubeVideos(query, pageNum);
+      const result = getMockVideos(query, pageNum);
       
       if (isLoadMore) {
         setVideos(prev => [...prev, ...result.videos]);
@@ -222,14 +128,14 @@ export const VideoPage = () => {
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="relative w-full max-w-5xl bg-black rounded-xl overflow-hidden"
+          className="relative w-full max-w-4xl bg-black rounded-xl overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-10 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors"
+            className="absolute top-3 right-3 z-10 p-1.5 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors"
           >
-            <FaTimes size={24} />
+            <FaTimes size={18} />
           </button>
           
           <div className="relative pb-[56.25%] h-0">
@@ -244,17 +150,17 @@ export const VideoPage = () => {
             ) : (
               <div className="absolute inset-0 bg-gray-900 flex items-center justify-center">
                 <div className="text-center text-white">
-                  <FaPlay className="text-6xl mx-auto mb-4" />
-                  <p>Video Preview - {video.title}</p>
+                  <FaPlay className="text-5xl mx-auto mb-3" />
+                  <p className="text-sm">Video Preview - {video.title}</p>
                 </div>
               </div>
             )}
           </div>
           
-          <div className="p-6 bg-gray-900 text-white">
-            <h2 className="text-2xl font-bold mb-2">{video.title}</h2>
-            <p className="text-gray-400 mb-2">{video.channelTitle}</p>
-            <p className="text-gray-300">{video.description}</p>
+          <div className="p-4 bg-gray-900 text-white">
+            <h2 className="text-lg font-bold mb-1 line-clamp-2">{video.title}</h2>
+            <p className="text-gray-400 text-xs mb-1">{video.channelTitle}</p>
+            <p className="text-gray-300 text-xs line-clamp-2">{video.description}</p>
           </div>
         </motion.div>
       </motion.div>
@@ -266,59 +172,63 @@ export const VideoPage = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="text-center mb-12">
-        <div className="inline-block p-4 bg-gradient-to-r from-red-500 to-red-600 rounded-full mb-4">
-          <FaVideo className="text-4xl text-white" />
+    <div className="container mx-auto px-4 py-6">
+      <div className="flex items-center justify-center gap-2 mb-4">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-red-500 to-red-600 rounded-full">
+          <FaVideo className="text-white text-base" />
+          <h1 className="text-white font-bold text-base">Videos</h1>
         </div>
-        <h1 className="text-4xl font-bold mb-2 dark:text-white">Videos</h1>
-        <p className="text-gray-600 dark:text-gray-400">{videos.length} videos loaded</p>
+        <p className="text-gray-600 dark:text-gray-400 text-sm">{videos.length} videos loaded</p>
       </div>
 
-      <form onSubmit={handleSearch} className="max-w-2xl mx-auto mb-8">
+      <form onSubmit={handleSearch} className="max-w-md mx-auto mb-4">
         <div className="flex gap-2">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search videos..."
-            className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-red-500 dark:bg-gray-800 dark:text-white"
+            className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-red-500 dark:bg-gray-800 dark:text-white"
           />
           <button
             type="submit"
-            className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors flex items-center gap-1"
           >
-            <FaSearch />
+            <FaSearch className="text-xs" />
             Search
           </button>
         </div>
       </form>
 
-      <div className="flex flex-wrap gap-2 mb-8 justify-center">
-        {categories.map((category) => (
-          <button
-            key={category.id}
-            onClick={() => setSelectedCategory(category.id)}
-            className={`px-4 py-2 rounded-full transition-colors ${
-              selectedCategory === category.id
-                ? 'bg-red-600 text-white'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-            }`}
-          >
-            {category.name}
-          </button>
-        ))}
+      {/* Scrollable Categories */}
+      <div className="overflow-x-auto scrollbar-hide mb-6">
+        <div className="flex gap-1.5 min-w-max pb-1">
+          {categories.map((category) => (
+            <button
+              key={category.id}
+              onClick={() => setSelectedCategory(category.id)}
+              className={`px-3 py-1.5 rounded-full transition-colors text-xs whitespace-nowrap ${
+                selectedCategory === category.id
+                  ? 'bg-red-600 text-white'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
+            >
+              {category.name}
+            </button>
+          ))}
+        </div>
       </div>
 
       {videos.length > 0 && (
         <>
-          <div className="mb-12">
-            <h2 className="text-2xl font-bold mb-6 dark:text-white">Featured</h2>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Featured Video */}
+          <div className="mb-8">
+            <h2 className="text-lg font-bold mb-3 dark:text-white">Featured</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div className="lg:col-span-2">
                 <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  className="relative cursor-pointer rounded-xl overflow-hidden shadow-xl"
+                  whileHover={{ scale: 1.01 }}
+                  className="relative cursor-pointer rounded-lg overflow-hidden shadow-lg"
                   onClick={() => setSelectedVideo(videos[0])}
                 >
                   <div className="relative pb-[56.25%]">
@@ -328,32 +238,32 @@ export const VideoPage = () => {
                       className="absolute inset-0 w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                      <div className="w-20 h-20 bg-red-600 rounded-full flex items-center justify-center">
-                        <FaPlay className="text-white text-3xl ml-1" />
+                      <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center">
+                        <FaPlay className="text-white text-lg ml-0.5" />
                       </div>
                     </div>
                   </div>
-                  <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
-                    <h3 className="text-white font-bold text-lg line-clamp-2">
+                  <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black to-transparent">
+                    <h3 className="text-white font-bold text-sm line-clamp-2">
                       {videos[0].title}
                     </h3>
-                    <p className="text-gray-300 text-sm">{videos[0].channelTitle}</p>
+                    <p className="text-gray-300 text-xs">{videos[0].channelTitle}</p>
                   </div>
                 </motion.div>
               </div>
-              <div className="bg-gray-100 dark:bg-gray-800 rounded-xl p-6">
-                <h3 className="text-xl font-bold mb-4 dark:text-white flex items-center">
-                  <FaYoutube className="mr-2 text-red-600" />
+              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
+                <h3 className="font-bold mb-2 dark:text-white flex items-center text-sm">
+                  <FaYoutube className="mr-1 text-red-600" />
                   About
                 </h3>
-                <p className="text-gray-700 dark:text-gray-300 mb-4 line-clamp-4">
+                <p className="text-gray-700 dark:text-gray-300 text-xs mb-3 line-clamp-4">
                   {videos[0].description}
                 </p>
-                <div className="pt-4 border-t dark:border-gray-700">
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="pt-3 border-t dark:border-gray-700">
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
                     Channel: {videos[0].channelTitle}
                   </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
                     Published: {new Date(videos[0].publishedAt).toLocaleDateString()}
                   </p>
                 </div>
@@ -361,17 +271,18 @@ export const VideoPage = () => {
             </div>
           </div>
 
+          {/* Video Grid */}
           <div>
-            <h2 className="text-2xl font-bold mb-6 dark:text-white">More Videos</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <h2 className="text-lg font-bold mb-3 dark:text-white">More Videos</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {videos.slice(1).map((video, index) => (
                 <motion.div
                   key={video.id || index}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: (index % 10) * 0.05 }}
-                  whileHover={{ y: -5 }}
-                  className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden cursor-pointer"
+                  whileHover={{ y: -3 }}
+                  className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden cursor-pointer"
                   onClick={() => setSelectedVideo(video)}
                 >
                   <div className="relative pb-[56.25%]">
@@ -381,17 +292,17 @@ export const VideoPage = () => {
                       className="absolute inset-0 w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                      <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center">
-                        <FaPlay className="text-white text-lg ml-1" />
+                      <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center">
+                        <FaPlay className="text-white text-sm ml-0.5" />
                       </div>
                     </div>
-                    <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs flex items-center">
-                      <FaYoutube className="mr-1 text-red-500 text-xs" />
+                    <div className="absolute top-2 right-2 bg-black/70 text-white px-1.5 py-0.5 rounded text-[10px] flex items-center">
+                      <FaYoutube className="mr-0.5 text-red-500 text-[10px]" />
                       Watch
                     </div>
                   </div>
-                  <div className="p-4">
-                    <h3 className="font-bold mb-2 line-clamp-2 dark:text-white text-sm">
+                  <div className="p-3">
+                    <h3 className="font-bold mb-1 line-clamp-2 dark:text-white text-sm">
                       {video.title}
                     </h3>
                     <p className="text-xs text-gray-600 dark:text-gray-400">
@@ -403,18 +314,18 @@ export const VideoPage = () => {
             </div>
             
             {(loadingMore || hasMore) && (
-              <div ref={loaderRef} className="text-center py-8">
+              <div ref={loaderRef} className="text-center py-6">
                 {loadingMore && (
                   <div className="inline-flex items-center space-x-2">
-                    <div className="w-6 h-6 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-                    <span className="text-gray-600 dark:text-gray-400">Loading more videos...</span>
+                    <div className="w-5 h-5 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-gray-600 dark:text-gray-400 text-sm">Loading more videos...</span>
                   </div>
                 )}
               </div>
             )}
             
             {!hasMore && videos.length > 0 && (
-              <p className="text-center text-gray-500 dark:text-gray-400 mt-8 py-8">
+              <p className="text-center text-gray-500 dark:text-gray-400 mt-6 py-4 text-sm">
                 You've reached the end of videos
               </p>
             )}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -19,6 +19,7 @@ export const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const { isDark, toggleTheme } = useThemeStore();
   const navigate = useNavigate();
+  const menuRef = useRef(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -27,6 +28,18 @@ export const Navbar = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target) && isOpen) {
+        setIsOpen(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -55,9 +68,9 @@ export const Navbar = () => {
           : 'bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700'
       }`}>
         <nav className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16 lg:h-20">
+          <div className="flex items-center justify-between h-12 lg:h-14">
             <Link to="/" className="flex items-center">
-              <h1 className="font-serif text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+              <h1 className="font-serif text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">
                 Prime<span className="text-blue-600">News</span>
               </h1>
             </Link>
@@ -68,14 +81,14 @@ export const Navbar = () => {
                   key={item.path}
                   to={item.path}
                   className={({ isActive }) =>
-                    `flex items-center space-x-2 px-4 py-2 rounded-md font-medium transition-colors ${
+                    `flex items-center space-x-2 px-3 py-1.5 rounded-md font-medium transition-colors text-sm ${
                       isActive
                         ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20'
                         : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
                     }`
                   }
                 >
-                  <item.icon className="text-lg" />
+                  <item.icon className="text-base" />
                   <span>{item.label}</span>
                 </NavLink>
               ))}
@@ -84,26 +97,26 @@ export const Navbar = () => {
             <div className="flex items-center space-x-1">
               <button
                 onClick={handleSearchClick}
-                className="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="p-1.5 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 aria-label="Search"
               >
-                <FaSearch className="text-xl" />
+                <FaSearch className="text-base" />
               </button>
 
               <button
                 onClick={toggleTheme}
-                className="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="p-1.5 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 aria-label="Toggle theme"
               >
-                {isDark ? <FaSun className="text-xl" /> : <FaMoon className="text-xl" />}
+                {isDark ? <FaSun className="text-base" /> : <FaMoon className="text-base" />}
               </button>
 
               <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="lg:hidden p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="lg:hidden p-1.5 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 aria-label="Menu"
               >
-                {isOpen ? <FaTimes className="text-xl" /> : <FaBars className="text-xl" />}
+                {isOpen ? <FaTimes className="text-base" /> : <FaBars className="text-base" />}
               </button>
             </div>
           </div>
@@ -112,13 +125,14 @@ export const Navbar = () => {
         <AnimatePresence>
           {isOpen && (
             <motion.div
+              ref={menuRef}
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
               className="lg:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
             >
-              <div className="container mx-auto px-4 py-6">
+              <div className="container mx-auto px-4 py-4">
                 <div className="space-y-1">
                   {navItems.map((item, index) => (
                     <motion.div
@@ -131,14 +145,14 @@ export const Navbar = () => {
                         to={item.path}
                         onClick={() => setIsOpen(false)}
                         className={({ isActive }) =>
-                          `flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors ${
+                          `flex items-center space-x-3 px-4 py-2 rounded-lg font-medium transition-colors text-sm ${
                             isActive
                               ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20'
                               : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
                           }`
                         }
                       >
-                        <item.icon className="text-xl" />
+                        <item.icon className="text-base" />
                         <span>{item.label}</span>
                       </NavLink>
                     </motion.div>

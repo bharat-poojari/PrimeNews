@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   FaNewspaper, 
@@ -12,7 +11,6 @@ import {
 import { useNewsStore } from '../../store/newsStore';
 
 export const CategoryTabs = () => {
-  const navigate = useNavigate();
   const { currentCategory, setCurrentCategory } = useNewsStore();
 
   const CATEGORIES = [
@@ -27,25 +25,24 @@ export const CategoryTabs = () => {
 
   const handleCategoryClick = (categoryId) => {
     setCurrentCategory(categoryId);
-    navigate(`/category/${categoryId}`);
   };
 
   return (
     <div className="overflow-x-auto scrollbar-hide">
-      <div className="flex space-x-2 min-w-max pb-2">
+      <div className="flex space-x-2 min-w-max pb-1">
         {CATEGORIES.map((category) => (
           <motion.button
             key={category.id}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => handleCategoryClick(category.id)}
-            className={`px-6 py-3 rounded-full font-semibold transition-all flex items-center gap-2 ${
+            className={`px-3 py-1.5 rounded-full font-medium transition-all flex items-center gap-1.5 text-xs md:text-sm whitespace-nowrap ${
               currentCategory === category.id
-                ? 'bg-blue-600 text-white shadow-lg'
+                ? 'bg-blue-600 text-white shadow-md'
                 : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
             }`}
           >
-            <category.icon className="text-lg" />
+            <category.icon className="text-xs md:text-sm" />
             {category.name}
           </motion.button>
         ))}

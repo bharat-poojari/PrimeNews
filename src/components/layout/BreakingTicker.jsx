@@ -7,6 +7,16 @@ export const BreakingTicker = () => {
   const [headlines, setHeadlines] = useState([]);
   const [isPaused, setIsPaused] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     const fetchBreaking = async () => {
@@ -24,32 +34,61 @@ export const BreakingTicker = () => {
   }, []);
 
   useEffect(() => {
-    if (!isPaused && headlines.length > 0) {
+    if (!isPaused && headlines.length > 0 && !isMobile) {
       const timer = setInterval(() => {
         setCurrentIndex((prev) => (prev + 1) % headlines.length);
       }, 5000);
       return () => clearInterval(timer);
     }
-  }, [isPaused, headlines.length]);
+  }, [isPaused, headlines.length, isMobile]);
 
   if (headlines.length === 0) return null;
 
+  // Mobile view with marquee
+  if (isMobile) {
+    const marqueeText = headlines.map(h => `${h.source?.name || 'News'}: ${h.title}`).join(' ••• ');
+    
+    return (
+      <div className="bg-gradient-to-r from-red-600 via-red-700 to-red-800 text-white py-2 shadow-lg relative overflow-hidden">
+        <div className="container mx-auto px-3">
+          <div className="flex items-center space-x-2">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="flex items-center space-x-1 px-2 py-1 bg-white/20 rounded-full flex-shrink-0"
+            >
+              <FaCircle className="text-red-300 text-[8px] animate-pulse" />
+              <span className="font-bold text-[10px] tracking-wider uppercase">Breaking</span>
+            </motion.div>
+            
+            <div className="flex-1 overflow-hidden">
+              <div className="animate-marquee whitespace-nowrap">
+                <span className="text-xs font-medium inline-block">
+                  {marqueeText}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop view with controls
   return (
-    <div className="bg-gradient-to-r from-red-600 via-red-700 to-red-800 text-white py-3 shadow-lg relative overflow-hidden">
-      <div className="container mx-auto px-4 relative">
-        <div className="flex items-center space-x-4">
-          {/* Breaking Label */}
+    <div className="bg-gradient-to-r from-red-600 via-red-700 to-red-800 text-white py-2 shadow-lg relative overflow-hidden">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between space-x-4">
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className="flex items-center space-x-2 px-4 py-2 bg-white/20 rounded-full shadow-lg flex-shrink-0"
+            className="flex items-center space-x-2 px-3 py-1.5 bg-white/20 rounded-full flex-shrink-0"
           >
             <FaCircle className="text-red-300 text-xs animate-pulse" />
             <span className="font-bold text-sm tracking-wider uppercase">Breaking</span>
           </motion.div>
 
-          {/* Ticker Content */}
-          <div className="flex-1 overflow-hidden relative">
+          <div className="flex-1 overflow-hidden">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentIndex}
@@ -59,37 +98,39 @@ export const BreakingTicker = () => {
                 transition={{ duration: 0.3 }}
                 className="flex items-center"
               >
-                <span className="text-white/80 mr-3 font-semibold text-sm">
+                <span className="text-white/80 mr-3 font-semibold text-sm flex-shrink-0">
                   {headlines[currentIndex]?.source?.name || 'News'}:
                 </span>
-                <span className="font-medium truncate text-sm">
+                <span className="font-medium text-sm truncate">
                   {headlines[currentIndex]?.title || ''}
                 </span>
               </motion.div>
             </AnimatePresence>
           </div>
 
-          {/* Controls */}
-          <div className="flex items-center space-x-2 flex-shrink-0">
+          <div className="flex items-center space-x-1 flex-shrink-0">
             <button
               onClick={() => setCurrentIndex((prev) => (prev - 1 + headlines.length) % headlines.length)}
-              className="p-2 hover:bg-white/20 rounded-full transition-colors"
+              className="p-1.5 hover:bg-white/20 rounded-full transition-colors"
+              aria-label="Previous"
             >
-              <FaChevronLeft className="text-sm" />
+              <FaChevronLeft className="text-xs" />
             </button>
             
             <button
               onClick={() => setIsPaused(!isPaused)}
-              className="p-2 hover:bg-white/20 rounded-full transition-colors"
+              className="p-1.5 hover:bg-white/20 rounded-full transition-colors"
+              aria-label={isPaused ? 'Play' : 'Pause'}
             >
-              {isPaused ? <FaPlay className="text-sm" /> : <FaPause className="text-sm" />}
+              {isPaused ? <FaPlay className="text-xs" /> : <FaPause className="text-xs" />}
             </button>
             
             <button
               onClick={() => setCurrentIndex((prev) => (prev + 1) % headlines.length)}
-              className="p-2 hover:bg-white/20 rounded-full transition-colors"
+              className="p-1.5 hover:bg-white/20 rounded-full transition-colors"
+              aria-label="Next"
             >
-              <FaChevronRight className="text-sm" />
+              <FaChevronRight className="text-xs" />
             </button>
           </div>
         </div>
