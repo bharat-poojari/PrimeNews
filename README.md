@@ -312,9 +312,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - 🌐 **Portfolio**: [https://bharat-poojari.vercel.app](https://bharat-poojari.vercel.app)
 - 💻 **GitHub**: [https://github.com/bharat-poojari](https://github.com/bharat-poojari)
-- 📧 **Email**: bharatpoojari@example.com
+- 📧 **Email**: bharatp0316@gamil.com
 - 💼 **LinkedIn**: [Bharat Poojari](https://linkedin.com/in/bharat-poojari)
-- 🐦 **Twitter**: [@bharatpoojari](https://twitter.com/bharatpoojari)
+
 
 ### Skills & Expertise
 - **Frontend**: React, Next.js, Vue.js, Angular
@@ -360,7 +360,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-For support, email bharatpoojari@example.com or open an issue on GitHub.
+For support, email bharatp0316@gmail.com or open an issue on GitHub.
 
 ## ⭐ Show your support
 
