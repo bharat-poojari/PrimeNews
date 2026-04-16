@@ -28,58 +28,34 @@ class NewsService {
           });
           return response.data;
         },
-        fetchSearch: async (query, page) => {
-          const baseUrl = import.meta.env.DEV ? '/api' : 'https://newsapi.org/v2';
-          const response = await this.api.get(`${baseUrl}/everything`, {
-            params: {
-              q: query,
-              pageSize: 30,
-              page: page,
-              sortBy: "publishedAt",
-              apiKey: NEWS_API_KEY,
-            },
-          });
-          return response.data;
-        }
-      },
-      {
-        name: 'GNews',
-        enabled: !!GNEWS_API_KEY,
-        fetchHeadlines: async (category, country, page) => {
-          const categoryMap = {
-            general: 'general',
-            technology: 'technology',
-            business: 'business',
-            entertainment: 'entertainment',
-            sports: 'sports',
-            science: 'science',
-            health: 'health'
-          };
-          const response = await this.api.get('https://gnews.io/api/v4/top-headlines', {
-            params: {
-              token: GNEWS_API_KEY,
-              country: country,
-              category: categoryMap[category] || 'general',
-              lang: 'en',
-              max: 30,
-              page: page,
-            },
-          });
-          return {
-            articles: (response.data.articles || []).map(article => ({
-              source: { id: null, name: article.source?.name || 'GNews' },
-              author: article.author,
-              title: article.title,
-              description: article.description,
-              url: article.url,
-              urlToImage: article.image,
-              publishedAt: article.publishedAt,
-              content: article.content
-            })),
-            totalResults: response.data.totalArticles || 0,
-            status: 'ok'
-          };
-        },
+        // Update the GNews fetchSearch method in the api.js constructor:
+fetchSearch: async (query, page) => {
+  const response = await this.api.get("https://gnews.io/api/v4/search", {
+    params: {
+      token: GNEWS_API_KEY,
+      q: query,
+      lang: "en",
+      max: 30,
+      page: page,
+      sortby: "publishedAt"
+    }
+  });
+  
+  return {
+    articles: (response.data.articles || []).map(article => ({
+      source: { id: null, name: article.source?.name || "GNews" },
+      author: article.author,
+      title: article.title,
+      description: article.description,
+      url: article.url,
+      urlToImage: article.image,
+      publishedAt: article.publishedAt,
+      content: article.content
+    })),
+    totalResults: response.data.totalArticles || 0,
+    status: "ok"
+  };
+},
         fetchSearch: async (query, page) => {
           const response = await this.api.get('https://gnews.io/api/v4/search', {
             params: {
@@ -223,27 +199,46 @@ class NewsService {
     }
   }
 
-  async searchNews(query, page = 1) {
-    if (!query) {
-      return { articles: [], totalResults: 0 };
-    }
+  // Inside api.js, replace the searchNews method with this improved version:
 
-    const cacheKey = `search-${query}-${page}`;
-    const cached = cacheService.get(cacheKey);
-    if (cached) return cached;
-
-    try {
-      const data = await this.fetchWithFallback('fetchSearch', query, page);
-      if (data.articles && data.articles.length > 0) {
-        cacheService.set(cacheKey, data, 300);
-      }
-      return data;
-    } catch (error) {
-      console.error("Search failed:", error);
-      return { articles: this.getMockData().articles.slice(0, 30), totalResults: 100 };
-    }
+async searchNews(query, page = 1) {
+  if (!query || query.trim() === '') {
+    return { articles: [], totalResults: 0 };
   }
-
+  
+  const cacheKey = `search-${query.trim()}-${page}`;
+  const cached = cacheService.get(cacheKey);
+  if (cached) return cached;
+  
+  try {
+    console.log(`Searching for: ${query} using ${this.enabledApis.length} APIs`);
+    
+    // Try each enabled API
+    for (let i = 0; i < this.enabledApis.length; i++) {
+      const api = this.enabledApis[(this.currentApiIndex + i) % this.enabledApis.length];
+      try {
+        console.log(`Trying ${api.name} for search: "${query}"`);
+        const result = await api.fetchSearch(query, page);
+        
+        if (result.articles && result.articles.length > 0) {
+          console.log(`Search successful with ${api.name}: ${result.articles.length} results`);
+          cacheService.set(cacheKey, result, 300);
+          return result;
+        }
+      } catch (err) {
+        console.log(`${api.name} search failed:`, err.message);
+      }
+    }
+    
+    // If all APIs fail, return empty results instead of mock data
+    console.log('All search APIs failed, returning empty results');
+    return { articles: [], totalResults: 0 };
+    
+  } catch (error) {
+    console.error('Search error:', error);
+    return { articles: [], totalResults: 0 };
+  }
+}
   async fetchTrending(page = 1) {
     const categories = ["technology", "business", "entertainment", "sports", "science", "health"];
     const promises = categories.map(cat => this.fetchTopHeadlines(cat, "in", page));

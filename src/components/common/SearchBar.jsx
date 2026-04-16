@@ -16,6 +16,13 @@ export const SearchBar = ({ onSearch, initialValue = '', autoFocus = false }) =>
     }
   }, [autoFocus]);
 
+  // Load recent searches as suggestions
+  useEffect(() => {
+    if (searchHistory && searchHistory.length > 0) {
+      setSuggestions(searchHistory.slice(0, 5));
+    }
+  }, [searchHistory]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (query.trim()) {
@@ -35,12 +42,22 @@ export const SearchBar = ({ onSearch, initialValue = '', autoFocus = false }) =>
   const handleClear = () => {
     setQuery('');
     inputRef.current?.focus();
+    onSearch(''); // Clear search results
   };
 
   const handleFocus = () => {
-    if (searchHistory.length > 0) {
-      setSuggestions(searchHistory);
+    if (searchHistory && searchHistory.length > 0) {
+      setSuggestions(searchHistory.slice(0, 5));
       setShowSuggestions(true);
+    }
+  };
+
+  const handleChange = (e) => {
+    const value = e.target.value;
+    setQuery(value);
+    // If user clears input, clear results
+    if (value === '') {
+      onSearch('');
     }
   };
 
@@ -51,11 +68,11 @@ export const SearchBar = ({ onSearch, initialValue = '', autoFocus = false }) =>
           ref={inputRef}
           type="text"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={handleChange}
           onFocus={handleFocus}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-          placeholder="Search for news..."
-          className="w-full px-5 py-3 pl-12 pr-10 rounded-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Search for news... (e.g., anime, technology, sports)"
+          className="w-full px-5 py-3 pl-12 pr-28 rounded-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
         <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
         
@@ -63,7 +80,8 @@ export const SearchBar = ({ onSearch, initialValue = '', autoFocus = false }) =>
           <button
             type="button"
             onClick={handleClear}
-            className="absolute right-14 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-24 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            aria-label="Clear search"
           >
             <FaTimes />
           </button>
@@ -71,7 +89,8 @@ export const SearchBar = ({ onSearch, initialValue = '', autoFocus = false }) =>
         
         <button
           type="submit"
-          className="absolute right-3 top-1/2 transform -translate-y-1/2 px-4 py-1.5 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
+          className="absolute right-2 top-1/2 transform -translate-y-1/2 px-4 py-1.5 bg-blue-600 text-white text-sm rounded-full hover:bg-blue-700 transition-colors"
+          aria-label="Search"
         >
           Search
         </button>
@@ -97,7 +116,7 @@ export const SearchBar = ({ onSearch, initialValue = '', autoFocus = false }) =>
                   className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
                 >
                   <FaSearch className="inline mr-2 text-gray-400 text-sm" />
-                  <span className="text-gray-700 dark:text-gray-300">{suggestion}</span>
+                  <span className="text-gray-700 dark:text-gray-300 text-sm">{suggestion}</span>
                 </button>
               ))}
             </div>
