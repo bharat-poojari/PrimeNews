@@ -1,6 +1,7 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
+// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   server: {
@@ -10,26 +11,26 @@ export default defineConfig({
       '/api': {
         target: 'https://newsapi.org',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '/v2')
-      }
-    }
+        rewrite: (path) => path.replace(/^\/api/, '/v2'),
+      },
+    },
   },
   build: {
-    outDir: 'dist',
+    outDir: "dist",
     sourcemap: false,
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          ui: ['framer-motion', 'react-icons']
-        }
-      }
-    }
+          vendor: ["react", "react-dom", "react-router-dom"],
+          ui: ["framer-motion", "react-icons"],
+        },
+      },
+    },
   },
   define: {
-    'process.env': {}
+    'process.env': {},
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom', 'axios', 'zustand']
-  }
+    include: ['react', 'react-dom', 'react-router-dom', 'axios', 'zustand'],
+  },
 });
