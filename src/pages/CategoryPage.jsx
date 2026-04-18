@@ -1,3 +1,4 @@
+// PrimeNews/src/pages/CategoryPage.jsx
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -31,7 +32,7 @@ export const CategoryPage = () => {
 
   const fetchNews = useCallback(async (pageNum, isLoadMore = false) => {
     try {
-      const data = await newsService.fetchTopHeadlines(categoryId, 'in', pageNum);
+      const data = await newsService.fetchTopHeadlines(categoryId, 'us', pageNum);
       const newArticles = data.articles || [];
       
       if (isLoadMore) {
@@ -41,7 +42,7 @@ export const CategoryPage = () => {
       }
       
       setTotalResults(data.totalResults || 0);
-      setHasMore(newArticles.length === 30 && (pageNum * 30) < (data.totalResults || 1000));
+      setHasMore(newArticles.length === 30 && (pageNum * 30) < (data.totalResults || 0));
       
       return newArticles;
     } catch (err) {
@@ -85,7 +86,7 @@ export const CategoryPage = () => {
 
   if (error && articles.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 pt-20 lg:pt-24">
         <div className="text-center py-12">
           <p className="text-red-600 dark:text-red-400">{error}</p>
           <button 
@@ -100,7 +101,7 @@ export const CategoryPage = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 pt-20 lg:pt-24">
       <div className="mb-8">
         <Link to="/" className="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 mb-4">
           <FaArrowLeft className="mr-2" />

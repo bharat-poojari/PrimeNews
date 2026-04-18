@@ -1,29 +1,43 @@
+// PrimeNews/src/services/cache.js
 class CacheService {
-  set(key, data, ttlSeconds = 300) {
-    const item = {
-      data,
-      expiry: Date.now() + (ttlSeconds * 1000),
-    };
-    localStorage.setItem(`cache_${key}`, JSON.stringify(item));
+  set(key, data, durationSeconds = 300) {
+    try {
+      const cacheItem = {
+        data: data,
+        expiry: Date.now() + (durationSeconds * 1000)
+      };
+      localStorage.setItem(`cache_${key}`, JSON.stringify(cacheItem));
+    } catch (error) {
+      console.error("Cache set error:", error);
+    }
   }
 
   get(key) {
-    const cached = localStorage.getItem(`cache_${key}`);
-    if (!cached) return null;
-
-    const item = JSON.parse(cached);
-    if (Date.now() > item.expiry) {
-      localStorage.removeItem(`cache_${key}`);
+    try {
+      const cached = localStorage.getItem(`cache_${key}`);
+      if (!cached) return null;
+      
+      const cacheItem = JSON.parse(cached);
+      if (Date.now() > cacheItem.expiry) {
+        localStorage.removeItem(`cache_${key}`);
+        return null;
+      }
+      
+      return cacheItem.data;
+    } catch (error) {
+      console.error("Cache get error:", error);
       return null;
     }
-
-    return item.data;
   }
 
   clear() {
-    Object.keys(localStorage)
-      .filter(key => key.startsWith('cache_'))
-      .forEach(key => localStorage.removeItem(key));
+    try {
+      Object.keys(localStorage)
+        .filter(key => key.startsWith("cache_"))
+        .forEach(key => localStorage.removeItem(key));
+    } catch (error) {
+      console.error("Cache clear error:", error);
+    }
   }
 }
 

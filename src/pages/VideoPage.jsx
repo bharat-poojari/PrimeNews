@@ -1,7 +1,10 @@
+// PrimeNews/src/pages/VideoPage.jsx
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaVideo, FaYoutube, FaSearch, FaPlay, FaTimes } from 'react-icons/fa';
 import { LoaderSkeleton } from '../components/common/LoaderSkeleton';
+import { newsService } from '../services/api';
+import { useNavigate } from 'react-router-dom';
 
 export const VideoPage = () => {
   const [videos, setVideos] = useState([]);
@@ -13,36 +16,16 @@ export const VideoPage = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const loaderRef = useRef(null);
+  const navigate = useNavigate();
 
   const categories = [
     { id: 'all', name: 'All', query: 'news today' },
-    { id: 'news', name: 'News', query: 'breaking news today' },
-    { id: 'sports', name: 'Sports', query: 'sports news highlights' },
+    { id: 'news', name: 'News', query: 'breaking news' },
+    { id: 'sports', name: 'Sports', query: 'sports news' },
     { id: 'entertainment', name: 'Entertainment', query: 'entertainment news' },
     { id: 'technology', name: 'Technology', query: 'technology news' },
     { id: 'business', name: 'Business', query: 'business news' },
   ];
-
-  const getMockVideos = (query, pageNum = 1) => {
-    const allMockVideos = Array(50).fill().map((_, i) => ({
-      id: `mock-${i}`,
-      title: `${query || 'News'} Update ${i + 1}: Latest developments and breaking stories from around the world`,
-      description: `Comprehensive coverage of today's most important news events. This video brings you the latest updates on global affairs, politics, economy, and more.`,
-      thumbnail: `https://picsum.photos/id/${(i % 100) + 1}/400/225`,
-      channelTitle: 'Global News Network',
-      publishedAt: new Date(Date.now() - i * 3600000).toISOString(),
-      url: `https://www.youtube.com/watch?v=dQw4w9WgXcQ`,
-      source: { name: 'YouTube' }
-    }));
-    
-    const startIdx = (pageNum - 1) * 30;
-    const endIdx = startIdx + 30;
-    
-    return {
-      videos: allMockVideos.slice(startIdx, endIdx),
-      hasMore: endIdx < allMockVideos.length
-    };
-  };
 
   const loadVideos = useCallback(async (pageNum = 1, isLoadMore = false) => {
     try {
@@ -54,15 +37,27 @@ export const VideoPage = () => {
         query = searchQuery || category.query;
       }
       
-      const result = getMockVideos(query, pageNum);
+      // Add video-related terms to get video content
+      const videoQuery = `${query} video`;
+      const result = await newsService.searchNews(videoQuery, pageNum);
+      const articles = result.articles || [];
+      
+      // Filter for articles that might have video content
+      const videoArticles = articles.filter(article => 
+        article.title && 
+        article.url && 
+        (article.content?.toLowerCase().includes('video') || 
+         article.title?.toLowerCase().includes('video') ||
+         article.description?.toLowerCase().includes('watch'))
+      );
       
       if (isLoadMore) {
-        setVideos(prev => [...prev, ...result.videos]);
+        setVideos(prev => [...prev, ...videoArticles]);
       } else {
-        setVideos(result.videos);
+        setVideos(videoArticles);
       }
       
-      setHasMore(result.hasMore);
+      setHasMore(videoArticles.length === 30 && (result.totalResults > pageNum * 30));
     } catch (error) {
       console.error('Failed to fetch videos:', error);
     }
@@ -107,15 +102,13 @@ export const VideoPage = () => {
     }
   };
 
+  const handleArticleClick = (article) => {
+    const articleId = btoa(encodeURIComponent(article.url)).substring(0, 20);
+    navigate(`/article/${articleId}`, { state: { article } });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const VideoModal = ({ video, onClose }) => {
-    const getYouTubeId = (url) => {
-      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-      const match = url.match(regExp);
-      return match && match[2].length === 11 ? match[2] : null;
-    };
-
-    const videoId = getYouTubeId(video.url);
-
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -139,27 +132,24 @@ export const VideoPage = () => {
           </button>
           
           <div className="relative pb-[56.25%] h-0">
-            {videoId ? (
-              <iframe
-                src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`}
-                title={video.title}
-                className="absolute top-0 left-0 w-full h-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            ) : (
-              <div className="absolute inset-0 bg-gray-900 flex items-center justify-center">
-                <div className="text-center text-white">
-                  <FaPlay className="text-5xl mx-auto mb-3" />
-                  <p className="text-sm">Video Preview - {video.title}</p>
-                </div>
-              </div>
-            )}
+            <div className="absolute inset-0 bg-gray-900 flex flex-col items-center justify-center p-6">
+              <FaPlay className="text-5xl text-white mb-4" />
+              <h3 className="text-white text-lg font-bold text-center mb-2">{video.title}</h3>
+              <button
+                onClick={() => {
+                  window.open(video.url, '_blank');
+                  onClose();
+                }}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Read Full Article
+              </button>
+            </div>
           </div>
           
           <div className="p-4 bg-gray-900 text-white">
             <h2 className="text-lg font-bold mb-1 line-clamp-2">{video.title}</h2>
-            <p className="text-gray-400 text-xs mb-1">{video.channelTitle}</p>
+            <p className="text-gray-400 text-xs mb-1">{video.source?.name || 'News Source'}</p>
             <p className="text-gray-300 text-xs line-clamp-2">{video.description}</p>
           </div>
         </motion.div>
@@ -172,22 +162,22 @@ export const VideoPage = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      <div className="flex items-center justify-center gap-2 mb-4">
+    <div className="container mx-auto px-4 py-6 pt-20 lg:pt-24">
+      <div className="flex items-center justify-center gap-2 mb-6">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-red-500 to-red-600 rounded-full">
           <FaVideo className="text-white text-base" />
-          <h1 className="text-white font-bold text-base">Videos</h1>
+          <h1 className="text-white font-bold text-base">Video News</h1>
         </div>
         <p className="text-gray-600 dark:text-gray-400 text-sm">{videos.length} videos loaded</p>
       </div>
 
-      <form onSubmit={handleSearch} className="max-w-md mx-auto mb-4">
+      <form onSubmit={handleSearch} className="max-w-md mx-auto mb-6">
         <div className="flex gap-2">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search videos..."
+            placeholder="Search video news..."
             className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-red-500 dark:bg-gray-800 dark:text-white"
           />
           <button
@@ -233,9 +223,12 @@ export const VideoPage = () => {
                 >
                   <div className="relative pb-[56.25%]">
                     <img
-                      src={videos[0].thumbnail}
+                      src={videos[0].urlToImage || 'https://picsum.photos/id/20/800/450'}
                       alt={videos[0].title}
                       className="absolute inset-0 w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.src = 'https://picsum.photos/id/20/800/450';
+                      }}
                     />
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                       <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center">
@@ -247,25 +240,27 @@ export const VideoPage = () => {
                     <h3 className="text-white font-bold text-sm line-clamp-2">
                       {videos[0].title}
                     </h3>
-                    <p className="text-gray-300 text-xs">{videos[0].channelTitle}</p>
+                    <p className="text-gray-300 text-xs">{videos[0].source?.name || 'News Source'}</p>
                   </div>
                 </motion.div>
               </div>
               <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
                 <h3 className="font-bold mb-2 dark:text-white flex items-center text-sm">
                   <FaYoutube className="mr-1 text-red-600" />
-                  About
+                  About This Story
                 </h3>
                 <p className="text-gray-700 dark:text-gray-300 text-xs mb-3 line-clamp-4">
-                  {videos[0].description}
+                  {videos[0].description || 'Click to read the full article for more details.'}
                 </p>
                 <div className="pt-3 border-t dark:border-gray-700">
                   <p className="text-xs text-gray-600 dark:text-gray-400">
-                    Channel: {videos[0].channelTitle}
+                    Source: {videos[0].source?.name || 'News Source'}
                   </p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
-                    Published: {new Date(videos[0].publishedAt).toLocaleDateString()}
-                  </p>
+                  {videos[0].publishedAt && (
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      Published: {new Date(videos[0].publishedAt).toLocaleDateString()}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -277,19 +272,22 @@ export const VideoPage = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {videos.slice(1).map((video, index) => (
                 <motion.div
-                  key={video.id || index}
+                  key={video.url || index}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: (index % 10) * 0.05 }}
                   whileHover={{ y: -3 }}
                   className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden cursor-pointer"
-                  onClick={() => setSelectedVideo(video)}
+                  onClick={() => handleArticleClick(video)}
                 >
                   <div className="relative pb-[56.25%]">
                     <img
-                      src={video.thumbnail}
+                      src={video.urlToImage || 'https://picsum.photos/id/20/400/225'}
                       alt={video.title}
                       className="absolute inset-0 w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.src = 'https://picsum.photos/id/20/400/225';
+                      }}
                     />
                     <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                       <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center">
@@ -306,7 +304,7 @@ export const VideoPage = () => {
                       {video.title}
                     </h3>
                     <p className="text-xs text-gray-600 dark:text-gray-400">
-                      {video.channelTitle}
+                      {video.source?.name || 'News Source'}
                     </p>
                   </div>
                 </motion.div>

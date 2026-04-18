@@ -1,4 +1,6 @@
+// PrimeNews/src/components/common/CategoryTabs.jsx
 import { motion } from 'framer-motion';
+import { useState } from 'react';
 import { 
   FaNewspaper, 
   FaBriefcase, 
@@ -6,10 +8,16 @@ import {
   FaFilm, 
   FaFutbol, 
   FaFlask, 
-  FaHeartbeat 
+  FaHeartbeat,
+  FaChevronLeft,
+  FaChevronRight
 } from 'react-icons/fa';
 
-export const CategoryTabs = ({ onCategorySelect }) => {
+export const CategoryTabs = ({ onCategorySelect, activeCategory = 'general' }) => {
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(true);
+  
   const CATEGORIES = [
     { id: "general", name: "General", icon: FaNewspaper, color: "blue" },
     { id: "business", name: "Business", icon: FaBriefcase, color: "green" },
@@ -20,6 +28,30 @@ export const CategoryTabs = ({ onCategorySelect }) => {
     { id: "health", name: "Health", icon: FaHeartbeat, color: "red" }
   ];
 
+  const handleScroll = (direction) => {
+    const container = document.getElementById('category-scroll-container');
+    if (container) {
+      const scrollAmount = direction === 'left' ? -200 : 200;
+      container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  const handleScrollEvent = (e) => {
+    const target = e.target;
+    setShowLeftArrow(target.scrollLeft > 0);
+    setShowRightArrow(target.scrollLeft < target.scrollWidth - target.clientWidth - 10);
+  };
+
+  const colorClasses = {
+    blue: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+    green: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+    purple: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+    pink: "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400",
+    orange: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
+    teal: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400",
+    red: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+  };
+
   const handleCategoryClick = (categoryId) => {
     if (onCategorySelect) {
       onCategorySelect(categoryId);
@@ -27,23 +59,63 @@ export const CategoryTabs = ({ onCategorySelect }) => {
   };
 
   return (
-    <div className="overflow-x-auto scrollbar-hide">
-      <div className="flex space-x-2 min-w-max pb-1">
-        {CATEGORIES.map((category) => (
-          <motion.button
-            key={category.id}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => handleCategoryClick(category.id)}
-            className={`px-3 py-1.5 rounded-full font-medium transition-all flex items-center gap-1.5 text-xs md:text-sm whitespace-nowrap
-              bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700
-              hover:shadow-md active:scale-95`}
-          >
-            <category.icon className="text-xs md:text-sm" />
-            {category.name}
-          </motion.button>
-        ))}
+    <div className="relative">
+      {showLeftArrow && (
+        <button
+          onClick={() => handleScroll('left')}
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white dark:bg-gray-800 rounded-full shadow-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
+        >
+          <FaChevronLeft className="text-gray-600 dark:text-gray-400 text-sm" />
+        </button>
+      )}
+      
+      <div
+        id="category-scroll-container"
+        className="overflow-x-auto scrollbar-hide py-2 px-2"
+        onScroll={handleScrollEvent}
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        <div className="flex space-x-2 min-w-max">
+          {CATEGORIES.map((category) => {
+            const isActive = activeCategory === category.id;
+            return (
+              <motion.button
+                key={category.id}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => handleCategoryClick(category.id)}
+                className={`
+                  px-4 py-2 rounded-full font-medium transition-all duration-300 
+                  flex items-center gap-2 text-sm md:text-base whitespace-nowrap
+                  ${isActive 
+                    ? `${colorClasses[category.color]} shadow-md scale-105` 
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  }
+                `}
+              >
+                <category.icon className={`text-sm md:text-base ${isActive ? 'animate-pulse' : ''}`} />
+                <span className="font-semibold">{category.name}</span>
+                {isActive && (
+                  <motion.div
+                    layoutId="activeTab"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-current rounded-full"
+                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  />
+                )}
+              </motion.button>
+            );
+          })}
+        </div>
       </div>
+      
+      {showRightArrow && (
+        <button
+          onClick={() => handleScroll('right')}
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white dark:bg-gray-800 rounded-full shadow-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
+        >
+          <FaChevronRight className="text-gray-600 dark:text-gray-400 text-sm" />
+        </button>
+      )}
     </div>
   );
 };

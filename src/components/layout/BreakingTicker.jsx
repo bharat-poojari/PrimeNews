@@ -1,13 +1,16 @@
+// PrimeNews/src/components/layout/BreakingTicker.jsx
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaCircle, FaChevronLeft, FaChevronRight, FaPause, FaPlay } from 'react-icons/fa';
 import { newsService } from '../../services/api';
+import { useNavigate } from 'react-router-dom';
 
 export const BreakingTicker = () => {
   const [headlines, setHeadlines] = useState([]);
   const [isPaused, setIsPaused] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const checkMobile = () => {
@@ -21,8 +24,9 @@ export const BreakingTicker = () => {
   useEffect(() => {
     const fetchBreaking = async () => {
       try {
-        const data = await newsService.fetchTopHeadlines('general', 'in', 1);
-        setHeadlines(data.articles?.slice(0, 15) || []);
+        const data = await newsService.fetchTopHeadlines('general', 'us', 1);
+        const articles = data.articles?.filter(a => a.title && a.url).slice(0, 15) || [];
+        setHeadlines(articles);
       } catch (error) {
         console.error('Failed to fetch breaking news:', error);
       }
@@ -42,14 +46,19 @@ export const BreakingTicker = () => {
     }
   }, [isPaused, headlines.length, isMobile]);
 
+  const handleArticleClick = (article) => {
+    const articleId = btoa(encodeURIComponent(article.url)).substring(0, 20);
+    navigate(`/article/${articleId}`, { state: { article } });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   if (headlines.length === 0) return null;
 
-  // Mobile view with marquee
   if (isMobile) {
     const marqueeText = headlines.map(h => `${h.source?.name || 'News'}: ${h.title}`).join(' ••• ');
     
     return (
-      <div className="bg-gradient-to-r from-red-600 via-red-700 to-red-800 text-white py-2 shadow-lg relative overflow-hidden">
+      <div className="fixed top-14 lg:top-16 left-0 right-0 bg-gradient-to-r from-red-600 via-red-700 to-red-800 text-white py-2 shadow-lg z-40 overflow-hidden">
         <div className="container mx-auto px-3">
           <div className="flex items-center space-x-2">
             <motion.div
@@ -61,7 +70,7 @@ export const BreakingTicker = () => {
               <span className="font-bold text-[10px] tracking-wider uppercase">Breaking</span>
             </motion.div>
             
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-hidden cursor-pointer" onClick={() => handleArticleClick(headlines[0])}>
               <div className="animate-marquee whitespace-nowrap">
                 <span className="text-xs font-medium inline-block">
                   {marqueeText}
@@ -74,9 +83,8 @@ export const BreakingTicker = () => {
     );
   }
 
-  // Desktop view with controls
   return (
-    <div className="bg-gradient-to-r from-red-600 via-red-700 to-red-800 text-white py-2 shadow-lg relative overflow-hidden">
+    <div className="fixed top-14 lg:top-16 left-0 right-0 bg-gradient-to-r from-red-600 via-red-700 to-red-800 text-white py-2 shadow-lg z-40 overflow-hidden">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between space-x-4">
           <motion.div
@@ -88,7 +96,7 @@ export const BreakingTicker = () => {
             <span className="font-bold text-sm tracking-wider uppercase">Breaking</span>
           </motion.div>
 
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-hidden cursor-pointer" onClick={() => handleArticleClick(headlines[currentIndex])}>
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentIndex}

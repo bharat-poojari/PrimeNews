@@ -1,17 +1,17 @@
+// PrimeNews/vite.config.js
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
     open: true,
     proxy: {
-      '/api': {
-        target: 'https://newsapi.org',
+      "/api": {
+        target: "https://newsapi.org",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '/v2'),
+        rewrite: (path) => path.replace(/^\/api/, "/v2"),
       },
     },
   },
@@ -28,9 +28,9 @@ export default defineConfig({
     },
   },
   define: {
-    'process.env': {},
+    "process.env": {},
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom', 'axios', 'zustand'],
+    include: ["react", "react-dom", "react-router-dom", "axios", "zustand"],
   },
 });

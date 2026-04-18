@@ -1,3 +1,4 @@
+// PrimeNews/src/pages/HomePage.jsx
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { FaNewspaper, FaArrowRight, FaFilter } from 'react-icons/fa';
@@ -17,15 +18,17 @@ export const HomePage = () => {
   const [filteredNews, setFilteredNews] = useState([]);
   const [allCategoryNews, setAllCategoryNews] = useState({});
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [showAllCategories, setShowAllCategories] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const { currentCategory, setCurrentCategory } = useNewsStore();
 
   const categories = ['technology', 'business', 'sports', 'entertainment', 'science', 'health'];
 
-  // Fetch news for a specific category
   const fetchCategoryNews = async (category, pageNum = 1) => {
     try {
-      const data = await newsService.fetchTopHeadlines(category, 'in', pageNum);
+      const data = await newsService.fetchTopHeadlines(category, 'us', pageNum);
       return (data.articles || []).slice(0, 6);
     } catch (err) {
       console.error(`Failed to fetch ${category}:`, err);
@@ -33,25 +36,20 @@ export const HomePage = () => {
     }
   };
 
-  // Fetch featured news based on selected category
-  const fetchFeaturedNews = async () => {
+  const fetchFeaturedNews = async (category = currentCategory, pageNum = 1) => {
     try {
-      const headlines = await newsService.fetchTopHeadlines(currentCategory, 'in', 1);
+      const headlines = await newsService.fetchTopHeadlines(category, 'us', pageNum);
       const articles = headlines.articles || [];
       setFeaturedNews(articles);
-      
-      // When a category is selected, also show filtered news for that category
-      if (!showAllCategories) {
-        const categoryArticles = await fetchCategoryNews(currentCategory);
-        setFilteredNews(categoryArticles);
-      }
+      setHasMore(articles.length === 30);
+      return articles;
     } catch (error) {
       console.error('Failed to fetch featured news:', error);
       setApiError('Failed to fetch news data. Please check your API configuration.');
+      return [];
     }
   };
 
-  // Fetch all categories news for the "All Categories" view
   const fetchAllCategoriesNews = async () => {
     const categoryData = {};
     
@@ -65,18 +63,17 @@ export const HomePage = () => {
     setAllCategoryNews(categoryData);
   };
 
-  // Handle category selection
   const handleCategorySelect = async (categoryId) => {
     setCurrentCategory(categoryId);
     setShowAllCategories(false);
     setLoading(true);
+    setPage(1);
+    setHasMore(true);
     
     try {
-      // Fetch featured news for selected category
-      const headlines = await newsService.fetchTopHeadlines(categoryId, 'in', 1);
+      const headlines = await newsService.fetchTopHeadlines(categoryId, 'us', 1);
       setFeaturedNews(headlines.articles || []);
       
-      // Fetch filtered news for selected category
       const categoryArticles = await fetchCategoryNews(categoryId);
       setFilteredNews(categoryArticles);
       
@@ -89,18 +86,15 @@ export const HomePage = () => {
     }
   };
 
-  // Show all categories
   const handleShowAllCategories = async () => {
     setCurrentCategory('general');
     setShowAllCategories(true);
     setLoading(true);
+    setPage(1);
     
     try {
-      // Fetch general news for featured section
-      const headlines = await newsService.fetchTopHeadlines('general', 'in', 1);
+      const headlines = await newsService.fetchTopHeadlines('general', 'us', 1);
       setFeaturedNews(headlines.articles || []);
-      
-      // Fetch all categories news
       await fetchAllCategoriesNews();
     } catch (error) {
       console.error('Failed to fetch all categories:', error);
@@ -110,17 +104,31 @@ export const HomePage = () => {
     }
   };
 
-  // Initial load
+  const loadMoreFeatured = async () => {
+    if (loadingMore || !hasMore) return;
+    
+    setLoadingMore(true);
+    const nextPage = page + 1;
+    try {
+      const headlines = await newsService.fetchTopHeadlines(currentCategory, 'us', nextPage);
+      const newArticles = headlines.articles || [];
+      setFeaturedNews(prev => [...prev, ...newArticles]);
+      setPage(nextPage);
+      setHasMore(newArticles.length === 30);
+    } catch (error) {
+      console.error('Failed to load more:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
   useEffect(() => {
     const loadInitialData = async () => {
       setLoading(true);
       setApiError(null);
       try {
-        // Load general featured news
-        const headlines = await newsService.fetchTopHeadlines('general', 'in', 1);
+        const headlines = await newsService.fetchTopHeadlines('general', 'us', 1);
         setFeaturedNews(headlines.articles || []);
-        
-        // Load all categories for the grid view
         await fetchAllCategoriesNews();
         setShowAllCategories(true);
         setCurrentCategory('general');
@@ -155,7 +163,7 @@ export const HomePage = () => {
 
   if (apiError) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 pt-24">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-2xl mx-auto">
           <h3 className="text-lg font-semibold text-red-900">API Error</h3>
           <p className="text-red-700 mt-2">{apiError}</p>
@@ -170,13 +178,13 @@ export const HomePage = () => {
       <BreakingTicker />
       
       <main className="container mx-auto px-4 py-6 lg:py-8">
-        {/* Category Tabs - Now actually filters content */}
+        {/* News Categories Section with top margin to avoid overlap */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-8 mt-[3.3rem] lg:mt-[3.3rem]"
         >
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
             <div>
               <h2 className="font-serif text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-1">
                 News Categories
@@ -186,14 +194,17 @@ export const HomePage = () => {
             {!showAllCategories && (
               <button
                 onClick={handleShowAllCategories}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors shadow-md"
               >
                 <FaFilter className="text-xs" />
                 Show All Categories
               </button>
             )}
           </div>
-          <CategoryTabs onCategorySelect={handleCategorySelect} />
+          <CategoryTabs 
+            onCategorySelect={handleCategorySelect} 
+            activeCategory={currentCategory}
+          />
         </motion.section>
 
         {/* Featured Section - Shows selected category news */}
@@ -203,7 +214,7 @@ export const HomePage = () => {
           transition={{ delay: 0.2 }}
           className="mb-12"
         >
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
             <div>
               <h2 className="font-serif text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-1">
                 {showAllCategories ? 'Top Stories' : `${getCategoryDisplayName()} News`}
@@ -213,15 +224,27 @@ export const HomePage = () => {
             {!showAllCategories && (
               <Link 
                 to={`/category/${currentCategory}`}
-                className="group flex items-center space-x-1 text-blue-600 hover:text-blue-700 transition-colors text-sm"
+                className="group flex items-center space-x-1 text-blue-600 hover:text-blue-700 transition-colors text-sm font-medium"
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               >
-                <span className="font-medium">View All {getCategoryDisplayName()} News</span>
+                <span>View All {getCategoryDisplayName()} News</span>
                 <FaArrowRight className="group-hover:translate-x-1 transition-transform text-xs" />
               </Link>
             )}
           </div>
           <HeroSection articles={featuredNews} />
+          
+          {!showAllCategories && hasMore && featuredNews.length >= 30 && (
+            <div className="text-center mt-8">
+              <button
+                onClick={loadMoreFeatured}
+                disabled={loadingMore}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
+                {loadingMore ? 'Loading...' : 'Load More'}
+              </button>
+            </div>
+          )}
         </motion.section>
 
         {/* Filtered News Section - Shows when a category is selected */}
@@ -257,7 +280,7 @@ export const HomePage = () => {
               className="mb-12"
             >
               <div className="relative mb-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-3">
                   <div>
                     <h2 className="font-serif text-xl lg:text-2xl font-bold text-gray-900 dark:text-white capitalize mb-1">
                       {category}
@@ -266,9 +289,9 @@ export const HomePage = () => {
                   </div>
                   <button
                     onClick={() => handleCategorySelect(category)}
-                    className="group flex items-center space-x-1 text-blue-600 hover:text-blue-700 transition-colors text-sm"
+                    className="group flex items-center space-x-1 text-blue-600 hover:text-blue-700 transition-colors text-sm font-medium"
                   >
-                    <span className="font-medium">View All</span>
+                    <span>View All</span>
                     <FaArrowRight className="group-hover:translate-x-1 transition-transform text-xs" />
                   </button>
                 </div>
