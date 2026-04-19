@@ -42,12 +42,7 @@ export const SearchPage = () => {
         setResults(newArticles);
       }
       
-      const resultsPerPage = 30;
-      const total = data.totalResults || 0;
-      const maxPages = Math.ceil(Math.min(total, 100) / resultsPerPage);
-      const currentPageLoaded = pageNum;
-      const hasMorePages = currentPageLoaded < maxPages && newArticles.length === resultsPerPage;
-      
+      const hasMorePages = newArticles.length === 30;
       setHasMore(hasMorePages);
       
       return newArticles;
@@ -57,7 +52,6 @@ export const SearchPage = () => {
     }
   }, []);
 
-  // Setup intersection observer for infinite scroll
   useEffect(() => {
     if (loadingMore || !hasMore || loading || !debouncedQuery) return;
     
@@ -91,7 +85,6 @@ export const SearchPage = () => {
     };
   }, [loadingMore, hasMore, loading, page, performSearch, debouncedQuery]);
 
-  // Initial search when query changes
   useEffect(() => {
     if (debouncedQuery && debouncedQuery.trim()) {
       setPage(1);
@@ -139,7 +132,6 @@ export const SearchPage = () => {
             ))}
           </div>
           
-          {/* Infinite Scroll Loader */}
           <div ref={loadingRef} className="text-center py-8">
             {loadingMore && (
               <div className="inline-flex items-center space-x-3">

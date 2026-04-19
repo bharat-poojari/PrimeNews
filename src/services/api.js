@@ -1,7 +1,7 @@
 // PrimeNews/src/services/api.js
 import axios from "axios";
 
-const NEWS_API_KEY = import.meta.env.VITE_NEWS_API_KEY;
+const GNEWS_API_KEY = import.meta.env.VITE_GNEWS_API_KEY;
 
 class NewsService {
   constructor() {
@@ -15,8 +15,7 @@ class NewsService {
 
   async fetchTopHeadlines(category = "general", country = "us", page = 1) {
     try {
-      // Use NewsAPI directly
-      let url = `https://newsapi.org/v2/top-headlines?country=${country}&pageSize=30&page=${page}&apiKey=${NEWS_API_KEY}`;
+      let url = `https://gnews.io/api/v4/top-headlines?token=${GNEWS_API_KEY}&country=${country}&max=30&page=${page}&lang=en`;
       
       if (category && category !== 'general') {
         url += `&category=${category}`;
@@ -25,10 +24,21 @@ class NewsService {
       const response = await this.api.get(url);
       const data = response.data;
       
-      if (data.status === 'ok') {
+      if (data.articles) {
+        const articles = data.articles.map(article => ({
+          source: { id: null, name: article.source?.name || 'GNews' },
+          author: article.author,
+          title: article.title,
+          description: article.description,
+          url: article.url,
+          urlToImage: article.image,
+          publishedAt: article.publishedAt,
+          content: article.content
+        }));
+        
         return {
-          articles: data.articles || [],
-          totalResults: data.totalResults || 0
+          articles: articles,
+          totalResults: data.totalArticles || 0
         };
       }
       
@@ -45,14 +55,25 @@ class NewsService {
     }
 
     try {
-      const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&pageSize=30&page=${page}&sortBy=publishedAt&language=en&apiKey=${NEWS_API_KEY}`;
+      const url = `https://gnews.io/api/v4/search?token=${GNEWS_API_KEY}&q=${encodeURIComponent(query)}&max=30&page=${page}&lang=en&sortby=publishedAt`;
       const response = await this.api.get(url);
       const data = response.data;
       
-      if (data.status === 'ok') {
+      if (data.articles) {
+        const articles = data.articles.map(article => ({
+          source: { id: null, name: article.source?.name || 'GNews' },
+          author: article.author,
+          title: article.title,
+          description: article.description,
+          url: article.url,
+          urlToImage: article.image,
+          publishedAt: article.publishedAt,
+          content: article.content
+        }));
+        
         return {
-          articles: data.articles || [],
-          totalResults: data.totalResults || 0
+          articles: articles,
+          totalResults: data.totalArticles || 0
         };
       }
       
