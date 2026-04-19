@@ -18,6 +18,7 @@ export const SearchPage = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [searchError, setSearchError] = useState(null);
+  const [currentSearchQuery, setCurrentSearchQuery] = useState('');
   const observerRef = useRef(null);
   const loadingRef = useRef(null);
 
@@ -43,6 +44,7 @@ export const SearchPage = () => {
           return [...prev, ...uniqueNewArticles];
         });
       } else {
+        // Clear previous results when it's a new search
         setResults(newArticles);
       }
       
@@ -53,6 +55,7 @@ export const SearchPage = () => {
       const hasMorePages = currentPageLoaded < maxPages && newArticles.length === resultsPerPage;
       
       setHasMore(hasMorePages);
+      setCurrentSearchQuery(searchQuery);
       
       return newArticles;
     } catch (error) {
@@ -124,6 +127,7 @@ export const SearchPage = () => {
     setResults([]);
     setHasMore(false);
     setPage(1);
+    setCurrentSearchQuery('');
   };
 
   return (
@@ -139,7 +143,7 @@ export const SearchPage = () => {
           />
         </div>
 
-        {query && (
+        {query && results.length > 0 && (
           <div className="flex items-center justify-end mb-4">
             <button
               onClick={clearSearch}

@@ -1,14 +1,13 @@
+// PrimeNews/src/components/common/SearchBar.jsx
 import { useState, useRef, useEffect } from 'react';
 import { FaSearch, FaTimes } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAnalyticsStore } from '../../store/analyticsStore';
 
 export const SearchBar = ({ onSearch, initialValue = '', autoFocus = false }) => {
   const [query, setQuery] = useState(initialValue);
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef(null);
-  const { searchHistory, trackSearch } = useAnalyticsStore();
 
   useEffect(() => {
     if (autoFocus && inputRef.current) {
@@ -16,17 +15,26 @@ export const SearchBar = ({ onSearch, initialValue = '', autoFocus = false }) =>
     }
   }, [autoFocus]);
 
-  // Load recent searches as suggestions
+  // Load recent searches from localStorage
   useEffect(() => {
-    if (searchHistory && searchHistory.length > 0) {
-      setSuggestions(searchHistory.slice(0, 5));
+    const savedSearches = localStorage.getItem('recent_searches');
+    if (savedSearches) {
+      setSuggestions(JSON.parse(savedSearches).slice(0, 5));
     }
-  }, [searchHistory]);
+  }, []);
+
+  const saveToRecentSearches = (searchTerm) => {
+    const savedSearches = localStorage.getItem('recent_searches');
+    let searches = savedSearches ? JSON.parse(savedSearches) : [];
+    searches = [searchTerm, ...searches.filter(s => s !== searchTerm)].slice(0, 5);
+    localStorage.setItem('recent_searches', JSON.stringify(searches));
+    setSuggestions(searches);
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (query.trim()) {
-      trackSearch(query.trim());
+      saveToRecentSearches(query.trim());
       onSearch(query.trim());
       setShowSuggestions(false);
     }
@@ -34,7 +42,7 @@ export const SearchBar = ({ onSearch, initialValue = '', autoFocus = false }) =>
 
   const handleSuggestionClick = (suggestion) => {
     setQuery(suggestion);
-    trackSearch(suggestion);
+    saveToRecentSearches(suggestion);
     onSearch(suggestion);
     setShowSuggestions(false);
   };
@@ -42,12 +50,13 @@ export const SearchBar = ({ onSearch, initialValue = '', autoFocus = false }) =>
   const handleClear = () => {
     setQuery('');
     inputRef.current?.focus();
-    onSearch(''); // Clear search results
+    onSearch('');
   };
 
   const handleFocus = () => {
-    if (searchHistory && searchHistory.length > 0) {
-      setSuggestions(searchHistory.slice(0, 5));
+    const savedSearches = localStorage.getItem('recent_searches');
+    if (savedSearches) {
+      setSuggestions(JSON.parse(savedSearches).slice(0, 5));
       setShowSuggestions(true);
     }
   };
@@ -55,7 +64,6 @@ export const SearchBar = ({ onSearch, initialValue = '', autoFocus = false }) =>
   const handleChange = (e) => {
     const value = e.target.value;
     setQuery(value);
-    // If user clears input, clear results
     if (value === '') {
       onSearch('');
     }
@@ -71,25 +79,25 @@ export const SearchBar = ({ onSearch, initialValue = '', autoFocus = false }) =>
           onChange={handleChange}
           onFocus={handleFocus}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-          placeholder="Search for news... (e.g., anime, technology, sports)"
-          className="w-full px-5 py-3 pl-12 pr-28 rounded-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          placeholder="Search for news..."
+          className="w-full px-4 py-2.5 pl-10 pr-20 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
         />
-        <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+        <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm" />
         
         {query && (
           <button
             type="button"
             onClick={handleClear}
-            className="absolute right-24 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            className="absolute right-16 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             aria-label="Clear search"
           >
-            <FaTimes />
+            <FaTimes className="text-sm" />
           </button>
         )}
         
         <button
           type="submit"
-          className="absolute right-2 top-1/2 transform -translate-y-1/2 px-4 py-1.5 bg-blue-600 text-white text-sm rounded-full hover:bg-blue-700 transition-colors"
+          className="absolute right-1 top-1/2 transform -translate-y-1/2 px-3 py-1 bg-blue-600 text-white text-xs rounded-md hover:bg-blue-700 transition-colors"
           aria-label="Search"
         >
           Search
@@ -103,20 +111,20 @@ export const SearchBar = ({ onSearch, initialValue = '', autoFocus = false }) =>
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50"
+            className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50"
           >
-            <div className="p-2">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 px-2">
+            <div className="p-1">
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-1 px-2 pt-1">
                 Recent Searches
               </p>
               {suggestions.map((suggestion, index) => (
                 <button
                   key={index}
                   onClick={() => handleSuggestionClick(suggestion)}
-                  className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                  className="w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors text-sm"
                 >
-                  <FaSearch className="inline mr-2 text-gray-400 text-sm" />
-                  <span className="text-gray-700 dark:text-gray-300 text-sm">{suggestion}</span>
+                  <FaSearch className="inline mr-2 text-gray-400 text-[10px]" />
+                  <span className="text-gray-700 dark:text-gray-300 text-xs">{suggestion}</span>
                 </button>
               ))}
             </div>

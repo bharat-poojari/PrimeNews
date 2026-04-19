@@ -47,32 +47,38 @@ export const BreakingTicker = () => {
   }, [isPaused, headlines.length, isMobile]);
 
   const handleArticleClick = (article) => {
-    const articleId = btoa(encodeURIComponent(article.url)).substring(0, 20);
-    navigate(`/article/${articleId}`, { state: { article } });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (article && article.url) {
+      const articleId = btoa(encodeURIComponent(article.url)).substring(0, 20);
+      navigate(`/article/${articleId}`, { state: { article } });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   if (headlines.length === 0) return null;
 
+  // Mobile view with working click and marquee
   if (isMobile) {
     const marqueeText = headlines.map(h => `${h.source?.name || 'News'}: ${h.title}`).join(' ••• ');
     
     return (
-      <div className="fixed top-14 lg:top-16 left-0 right-0 bg-gradient-to-r from-red-600 via-red-700 to-red-800 text-white py-2 shadow-lg z-40 overflow-hidden">
+      <div className="fixed top-14 lg:top-16 left-0 right-0 bg-gradient-to-r from-red-600 via-red-700 to-red-800 text-white py-2.5 shadow-lg z-40 overflow-hidden">
         <div className="container mx-auto px-3">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-2">
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              className="flex items-center space-x-1 px-2 py-1 bg-white/20 rounded-full flex-shrink-0"
+              className="flex items-center gap-1.5 px-2.5 py-1 bg-white/20 rounded-full flex-shrink-0"
             >
               <FaCircle className="text-red-300 text-[8px] animate-pulse" />
               <span className="font-bold text-[10px] tracking-wider uppercase">Breaking</span>
             </motion.div>
             
-            <div className="flex-1 overflow-hidden cursor-pointer" onClick={() => handleArticleClick(headlines[0])}>
+            <div 
+              className="flex-1 overflow-hidden cursor-pointer"
+              onClick={() => handleArticleClick(headlines[0])}
+            >
               <div className="animate-marquee whitespace-nowrap">
-                <span className="text-xs font-medium inline-block">
+                <span className="text-xs font-medium inline-block px-2">
                   {marqueeText}
                 </span>
               </div>
@@ -83,20 +89,24 @@ export const BreakingTicker = () => {
     );
   }
 
+  // Desktop view with controls
   return (
     <div className="fixed top-14 lg:top-16 left-0 right-0 bg-gradient-to-r from-red-600 via-red-700 to-red-800 text-white py-2 shadow-lg z-40 overflow-hidden">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between space-x-4">
+        <div className="flex items-center justify-between gap-4">
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className="flex items-center space-x-2 px-3 py-1.5 bg-white/20 rounded-full flex-shrink-0"
+            className="flex items-center gap-2 px-3 py-1.5 bg-white/20 rounded-full flex-shrink-0"
           >
             <FaCircle className="text-red-300 text-xs animate-pulse" />
             <span className="font-bold text-sm tracking-wider uppercase">Breaking</span>
           </motion.div>
 
-          <div className="flex-1 overflow-hidden cursor-pointer" onClick={() => handleArticleClick(headlines[currentIndex])}>
+          <div 
+            className="flex-1 overflow-hidden cursor-pointer"
+            onClick={() => handleArticleClick(headlines[currentIndex])}
+          >
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentIndex}
@@ -104,9 +114,9 @@ export const BreakingTicker = () => {
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: -20, opacity: 0 }}
                 transition={{ duration: 0.3 }}
-                className="flex items-center"
+                className="flex items-center gap-3"
               >
-                <span className="text-white/80 mr-3 font-semibold text-sm flex-shrink-0">
+                <span className="text-white/80 font-semibold text-sm flex-shrink-0">
                   {headlines[currentIndex]?.source?.name || 'News'}:
                 </span>
                 <span className="font-medium text-sm truncate">
@@ -116,7 +126,7 @@ export const BreakingTicker = () => {
             </AnimatePresence>
           </div>
 
-          <div className="flex items-center space-x-1 flex-shrink-0">
+          <div className="flex items-center gap-1 flex-shrink-0">
             <button
               onClick={() => setCurrentIndex((prev) => (prev - 1 + headlines.length) % headlines.length)}
               className="p-1.5 hover:bg-white/20 rounded-full transition-colors"
