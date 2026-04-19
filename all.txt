@@ -3866,11 +3866,23 @@ PrimeNews/vercel.json
 PrimeNews/vite.config.js
 import{defineConfig}from"vite";import react from"@vitejs/plugin-react";export default defineConfig({plugins:[react()],server:{port:3e3,open:!0,proxy:{"/api":{target:"http://localhost:3000",changeOrigin:!0,rewrite:e=>e}}},build:{outDir:"dist",sourcemap:!1,rollupOptions:{output:{manualChunks:{vendor:["react","react-dom","react-router-dom"],ui:["framer-motion","react-icons"]}}}},define:{"process.env":{}},optimizeDeps:{include:["react","react-dom","react-router-dom","axios","zustand"]}});
 
+primenews/.env
+VITE_NEWS_API_KEY="83e4e21631f747069da9a0be3b153a32"
+VITE_GNEWS_API_KEY="062379a68af3aea550e5dd82fcf479b3"
+VITE_MEDIASTACK_API_KEY="2557e8713c3d622145ab692da933d6d2"
+VITE_APP_NAME="PrimeNews"
+VITE_APP_VERSION="1.0.0"
+
 these all are the codes from my project files Prime news. i want you fix properly the following issues.
 
-*real news from api is not being fetched,loading or showing on pages .nothing working at all everything is empty .make sure the real news fetched from api will displayed properly on vercel deployment.implement necessary changes and codes.
-*fix the layout and spacing for bookmark page the navbar overlaping the small part of book mark page content.
-*fix the design and layout of footer for both desktop and mobile screens.
-*make the search functionality work perfectly.
-*no extra information texts or toast messages are needed so do not implement them while fixing code do not change the contents just fix the issues.
-give me the codes of modified files without missing anything and making no mistakes
+
+i want you to generate these files codes once again without missing single line but fix the issues in the file and project so they can work completely fine.
+
+*i want all the structure and features to remain same.
+fix the functionality issues.
+make every single component work perfectly fine.
+fetch the news data from api provided in .env 
+do not use dummy content.
+generate every single file code without missing single line of code or missing any functionality or content i want everything to be intact.\
+fix all the issues like design,layout,api endpoint issues,fetching issues,displaying issues,data handling,error handling,style,loaing and other things start from the first file i have given you and continue one by one.
+do not skip anything give everything in full if the chat context is small we will continue in next chat so do not cut,skip any code ok

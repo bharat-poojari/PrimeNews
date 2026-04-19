@@ -1,5 +1,5 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 
 export const useThemeStore = create(
   persist(
@@ -9,7 +9,7 @@ export const useThemeStore = create(
       setTheme: (isDark) => set({ isDark }),
     }),
     {
-      name: "theme-preference",
+      name: 'theme-preference',
     }
   )
-);
+)
