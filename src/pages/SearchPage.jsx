@@ -1,3 +1,4 @@
+// PrimeNews/src/pages/SearchPage.jsx
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { newsService } from '../services/api';
@@ -19,7 +20,8 @@ export const SearchPage = () => {
   const [hasMore, setHasMore] = useState(true);
   const [totalResults, setTotalResults] = useState(0);
   const [searchError, setSearchError] = useState(null);
-  const loaderRef = useRef(null);
+  const observerRef = useRef(null);
+  const loadingRef = useRef(null);
 
   const debouncedQuery = useDebounce(query, 500);
 
@@ -41,16 +43,19 @@ export const SearchPage = () => {
       console.log(`Found ${newArticles.length} results for "${searchQuery}"`);
       
       if (isLoadMore) {
-        setResults(prev => [...prev, ...newArticles]);
+        setResults(prev => {
+          // Remove duplicates based on URL
+          const existingUrls = new Set(prev.map(a => a.url));
+          const uniqueNewArticles = newArticles.filter(a => !existingUrls.has(a.url));
+          return [...prev, ...uniqueNewArticles];
+        });
       } else {
         setResults(newArticles);
       }
       
       setTotalResults(data.totalResults || 0);
-      
-      // Check if there are more results
-      const totalFetched = isLoadMore ? results.length + newArticles.length : newArticles.length;
-      setHasMore(newArticles.length === 30 && totalFetched < (data.totalResults || 0));
+      const hasMoreData = newArticles.length === 30 && (pageNum * 30) < (data.totalResults || 0);
+      setHasMore(hasMoreData);
       
       if (newArticles.length === 0 && !isLoadMore) {
         toast.error(`No results found for "${searchQuery}"`);
@@ -63,7 +68,39 @@ export const SearchPage = () => {
       toast.error('Search failed. Please try again.');
       return [];
     }
-  }, [results.length]);
+  }, []);
+
+  // Setup intersection observer for infinite scroll
+  useEffect(() => {
+    if (loadingMore || !hasMore || loading || !debouncedQuery) return;
+    
+    const options = {
+      root: null,
+      rootMargin: '100px',
+      threshold: 0.1
+    };
+    
+    observerRef.current = new IntersectionObserver((entries) => {
+      const firstEntry = entries[0];
+      if (firstEntry.isIntersecting && !loadingMore && hasMore && !loading && debouncedQuery) {
+        setLoadingMore(true);
+        const nextPage = page + 1;
+        setPage(nextPage);
+        performSearch(debouncedQuery, nextPage, true).finally(() => setLoadingMore(false));
+      }
+    }, options);
+    
+    const currentLoadingRef = loadingRef.current;
+    if (currentLoadingRef) {
+      observerRef.current.observe(currentLoadingRef);
+    }
+    
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, [loadingMore, hasMore, loading, page, performSearch, debouncedQuery]);
 
   // Initial search when query changes
   useEffect(() => {
@@ -79,27 +116,6 @@ export const SearchPage = () => {
       setTotalResults(0);
     }
   }, [debouncedQuery, performSearch]);
-
-  // Load more results
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loadingMore && !loading && debouncedQuery && debouncedQuery.trim()) {
-          setLoadingMore(true);
-          const nextPage = page + 1;
-          setPage(nextPage);
-          performSearch(debouncedQuery, nextPage, true).finally(() => setLoadingMore(false));
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (loaderRef.current) {
-      observer.observe(loaderRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, [hasMore, loadingMore, loading, page, performSearch, debouncedQuery]);
 
   const handleSearch = (searchQuery) => {
     if (searchQuery && searchQuery.trim()) {
@@ -117,7 +133,7 @@ export const SearchPage = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div className="container mx-auto px-4 py-6 pt-20 lg:pt-24">
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-4 dark:text-white">Search News</h1>
         
@@ -141,7 +157,7 @@ export const SearchPage = () => {
             {results.length > 0 && (
               <button
                 onClick={clearSearch}
-                className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center gap-1"
+                className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center gap-1 transition-colors"
               >
                 <FaTimes className="text-xs" />
                 Clear search
@@ -167,22 +183,25 @@ export const SearchPage = () => {
             ))}
           </div>
           
-          {(loadingMore || hasMore) && (
-            <div ref={loaderRef} className="text-center py-8">
-              {loadingMore && (
-                <div className="inline-flex items-center space-x-2">
-                  <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="text-gray-600 dark:text-gray-400">Loading more results...</span>
-                </div>
-              )}
-            </div>
-          )}
-          
-          {!hasMore && results.length > 0 && (
-            <p className="text-center text-gray-500 dark:text-gray-400 mt-8 py-8">
-              End of results
-            </p>
-          )}
+          {/* Infinite Scroll Loader */}
+          <div ref={loadingRef} className="text-center py-8">
+            {loadingMore && (
+              <div className="inline-flex items-center space-x-3">
+                <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-gray-600 dark:text-gray-400 text-sm">Loading more results...</span>
+              </div>
+            )}
+            {!hasMore && results.length > 0 && (
+              <div className="text-center text-gray-500 dark:text-gray-400 py-4">
+                <p className="text-sm">End of results</p>
+              </div>
+            )}
+            {hasMore && !loadingMore && !loading && results.length > 0 && (
+              <div className="text-center text-gray-400 dark:text-gray-600 py-4">
+                <p className="text-xs">Scroll down to load more...</p>
+              </div>
+            )}
+          </div>
         </>
       ) : query && !loading ? (
         <div className="text-center py-12">
@@ -190,7 +209,7 @@ export const SearchPage = () => {
             <FaSearch className="text-4xl text-gray-400" />
           </div>
           <h3 className="text-lg font-semibold mb-2 dark:text-white">No results found</h3>
-          <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
+          <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto text-sm">
             We couldn't find any news matching "{query}". Try different keywords or browse our categories.
           </p>
           <div className="mt-6">

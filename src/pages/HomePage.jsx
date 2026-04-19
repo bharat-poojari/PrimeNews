@@ -1,5 +1,5 @@
 // PrimeNews/src/pages/HomePage.jsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { FaNewspaper, FaArrowRight, FaFilter } from 'react-icons/fa';
 import { BreakingTicker } from '../components/layout/BreakingTicker';
@@ -22,11 +22,14 @@ export const HomePage = () => {
   const [showAllCategories, setShowAllCategories] = useState(true);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [totalResults, setTotalResults] = useState(0);
+  const observerRef = useRef(null);
+  const loadingRef = useRef(null);
   const { currentCategory, setCurrentCategory } = useNewsStore();
 
   const categories = ['technology', 'business', 'sports', 'entertainment', 'science', 'health'];
 
-  const fetchCategoryNews = async (category, pageNum = 1) => {
+  const fetchCategoryNews = useCallback(async (category, pageNum = 1) => {
     try {
       const data = await newsService.fetchTopHeadlines(category, 'us', pageNum);
       return (data.articles || []).slice(0, 6);
@@ -34,23 +37,37 @@ export const HomePage = () => {
       console.error(`Failed to fetch ${category}:`, err);
       return [];
     }
-  };
+  }, []);
 
-  const fetchFeaturedNews = async (category = currentCategory, pageNum = 1) => {
+  const fetchFeaturedNews = useCallback(async (category = currentCategory, pageNum = 1, isLoadMore = false) => {
     try {
       const headlines = await newsService.fetchTopHeadlines(category, 'us', pageNum);
       const articles = headlines.articles || [];
-      setFeaturedNews(articles);
-      setHasMore(articles.length === 30);
+      
+      if (isLoadMore) {
+        setFeaturedNews(prev => {
+          // Remove duplicates based on URL
+          const existingUrls = new Set(prev.map(a => a.url));
+          const newArticles = articles.filter(a => !existingUrls.has(a.url));
+          return [...prev, ...newArticles];
+        });
+      } else {
+        setFeaturedNews(articles);
+      }
+      
+      setTotalResults(headlines.totalResults || 0);
+      const hasMoreData = articles.length === 30 && (pageNum * 30) < (headlines.totalResults || 0);
+      setHasMore(hasMoreData);
+      
       return articles;
     } catch (error) {
       console.error('Failed to fetch featured news:', error);
       setApiError('Failed to fetch news data. Please check your API configuration.');
       return [];
     }
-  };
+  }, [currentCategory]);
 
-  const fetchAllCategoriesNews = async () => {
+  const fetchAllCategoriesNews = useCallback(async () => {
     const categoryData = {};
     
     await Promise.all(
@@ -61,18 +78,21 @@ export const HomePage = () => {
     );
     
     setAllCategoryNews(categoryData);
-  };
+  }, [fetchCategoryNews]);
 
-  const handleCategorySelect = async (categoryId) => {
+  const handleCategorySelect = useCallback(async (categoryId) => {
     setCurrentCategory(categoryId);
     setShowAllCategories(false);
     setLoading(true);
     setPage(1);
     setHasMore(true);
+    setFeaturedNews([]);
     
     try {
       const headlines = await newsService.fetchTopHeadlines(categoryId, 'us', 1);
       setFeaturedNews(headlines.articles || []);
+      setTotalResults(headlines.totalResults || 0);
+      setHasMore(headlines.articles?.length === 30 && 30 < (headlines.totalResults || 0));
       
       const categoryArticles = await fetchCategoryNews(categoryId);
       setFilteredNews(categoryArticles);
@@ -84,17 +104,21 @@ export const HomePage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setCurrentCategory, fetchCategoryNews]);
 
-  const handleShowAllCategories = async () => {
+  const handleShowAllCategories = useCallback(async () => {
     setCurrentCategory('general');
     setShowAllCategories(true);
     setLoading(true);
     setPage(1);
+    setHasMore(true);
+    setFeaturedNews([]);
     
     try {
       const headlines = await newsService.fetchTopHeadlines('general', 'us', 1);
       setFeaturedNews(headlines.articles || []);
+      setTotalResults(headlines.totalResults || 0);
+      setHasMore(headlines.articles?.length === 30 && 30 < (headlines.totalResults || 0));
       await fetchAllCategoriesNews();
     } catch (error) {
       console.error('Failed to fetch all categories:', error);
@@ -102,25 +126,52 @@ export const HomePage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setCurrentCategory, fetchAllCategoriesNews]);
 
-  const loadMoreFeatured = async () => {
+  const loadMoreFeatured = useCallback(async () => {
     if (loadingMore || !hasMore) return;
     
     setLoadingMore(true);
     const nextPage = page + 1;
     try {
-      const headlines = await newsService.fetchTopHeadlines(currentCategory, 'us', nextPage);
-      const newArticles = headlines.articles || [];
-      setFeaturedNews(prev => [...prev, ...newArticles]);
+      await fetchFeaturedNews(currentCategory, nextPage, true);
       setPage(nextPage);
-      setHasMore(newArticles.length === 30);
     } catch (error) {
       console.error('Failed to load more:', error);
+      toast.error('Failed to load more articles');
     } finally {
       setLoadingMore(false);
     }
-  };
+  }, [loadingMore, hasMore, page, currentCategory, fetchFeaturedNews]);
+
+  // Setup intersection observer for infinite scroll
+  useEffect(() => {
+    if (loadingMore || !hasMore) return;
+    
+    const options = {
+      root: null,
+      rootMargin: '100px',
+      threshold: 0.1
+    };
+    
+    observerRef.current = new IntersectionObserver((entries) => {
+      const firstEntry = entries[0];
+      if (firstEntry.isIntersecting && !loadingMore && hasMore && !loading) {
+        loadMoreFeatured();
+      }
+    }, options);
+    
+    const currentLoadingRef = loadingRef.current;
+    if (currentLoadingRef) {
+      observerRef.current.observe(currentLoadingRef);
+    }
+    
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, [loadingMore, hasMore, loading, loadMoreFeatured]);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -129,6 +180,8 @@ export const HomePage = () => {
       try {
         const headlines = await newsService.fetchTopHeadlines('general', 'us', 1);
         setFeaturedNews(headlines.articles || []);
+        setTotalResults(headlines.totalResults || 0);
+        setHasMore(headlines.articles?.length === 30 && 30 < (headlines.totalResults || 0));
         await fetchAllCategoriesNews();
         setShowAllCategories(true);
         setCurrentCategory('general');
@@ -142,7 +195,7 @@ export const HomePage = () => {
     };
 
     loadInitialData();
-  }, []);
+  }, [fetchAllCategoriesNews, setCurrentCategory]);
 
   const getCategoryDisplayName = () => {
     const names = {
@@ -178,7 +231,7 @@ export const HomePage = () => {
       <BreakingTicker />
       
       <main className="container mx-auto px-4 py-6 lg:py-8">
-        {/* News Categories Section with top margin to avoid overlap */}
+        {/* News Categories Section */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -207,7 +260,7 @@ export const HomePage = () => {
           />
         </motion.section>
 
-        {/* Featured Section - Shows selected category news */}
+        {/* Featured Section */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -233,21 +286,9 @@ export const HomePage = () => {
             )}
           </div>
           <HeroSection articles={featuredNews} />
-          
-          {!showAllCategories && hasMore && featuredNews.length >= 30 && (
-            <div className="text-center mt-8">
-              <button
-                onClick={loadMoreFeatured}
-                disabled={loadingMore}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-              >
-                {loadingMore ? 'Loading...' : 'Load More'}
-              </button>
-            </div>
-          )}
         </motion.section>
 
-        {/* Filtered News Section - Shows when a category is selected */}
+        {/* Filtered News Section */}
         {!showAllCategories && filteredNews.length > 0 && (
           <motion.section
             initial={{ opacity: 0, y: 20 }}
@@ -263,13 +304,13 @@ export const HomePage = () => {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               {filteredNews.map((article, index) => (
-                <NewsCard key={`filtered-${index}`} article={article} />
+                <NewsCard key={`filtered-${article.url || index}`} article={article} />
               ))}
             </div>
           </motion.section>
         )}
 
-        {/* All Categories Section - Shows when "Show All" is active */}
+        {/* All Categories Section */}
         {showAllCategories && Object.entries(allCategoryNews).map(([category, articles], idx) => (
           articles.length > 0 && (
             <motion.section
@@ -299,12 +340,29 @@ export const HomePage = () => {
               
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {articles.slice(0, 6).map((article, i) => (
-                  <NewsCard key={`${category}-${i}`} article={article} />
+                  <NewsCard key={`${category}-${article.url || i}`} article={article} />
                 ))}
               </div>
             </motion.section>
           )
         ))}
+
+        {/* Infinite Scroll Loader */}
+        {!showAllCategories && (
+          <div ref={loadingRef} className="text-center py-8">
+            {loadingMore && (
+              <div className="inline-flex items-center space-x-3">
+                <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-gray-600 dark:text-gray-400 text-sm">Loading more articles...</span>
+              </div>
+            )}
+            {!hasMore && featuredNews.length > 0 && (
+              <div className="text-center text-gray-500 dark:text-gray-400 py-4">
+                <p className="text-sm">You've reached the end of the articles</p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Stay Informed Section */}
         <motion.section
