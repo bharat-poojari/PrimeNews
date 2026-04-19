@@ -1,3 +1,4 @@
+// PrimeNews/src/pages/ArticlePage.jsx
 import { useEffect, useState } from 'react';
 import { useLocation, Link, useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -25,7 +26,6 @@ import { NewsGrid } from '../components/news/NewsGrid';
 import { useAnalyticsStore } from '../store/analyticsStore';
 import { useNewsStore } from '../store/newsStore';
 import { newsService } from '../services/api';
-import toast from 'react-hot-toast';
 
 export const ArticlePage = () => {
   const location = useLocation();
@@ -41,7 +41,6 @@ export const ArticlePage = () => {
 
   useEffect(() => {
     if (!article) {
-      // Try to get from localStorage or redirect
       const savedArticle = localStorage.getItem(`article_${articleId}`);
       if (savedArticle) {
         try {
@@ -59,7 +58,6 @@ export const ArticlePage = () => {
     trackArticleClick(article.url, article.title);
     addViewedArticle(article);
     
-    // Save to localStorage for direct access
     localStorage.setItem(`article_${articleId}`, JSON.stringify(article));
     
     const fetchRelated = async () => {
@@ -78,7 +76,6 @@ export const ArticlePage = () => {
   const handleCopyLink = () => {
     navigator.clipboard.writeText(window.location.href);
     setCopySuccess(true);
-    toast.success('Link copied to clipboard!');
     setTimeout(() => setCopySuccess(false), 2000);
   };
 
@@ -101,7 +98,7 @@ export const ArticlePage = () => {
       </Helmet>
 
       <article className="bg-white dark:bg-gray-900">
-        <div className="container mx-auto px-4 py-6">
+        <div className="container mx-auto px-4 pt-24 pb-6">
           <Link to="/" className="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">
             <FaArrowLeft className="mr-2" />
             Back to Home
@@ -194,6 +191,11 @@ export const ArticlePage = () => {
                           className="p-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors relative"
                         >
                           <FaLink />
+                          {copySuccess && (
+                            <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-xs bg-gray-800 text-white px-2 py-1 rounded whitespace-nowrap">
+                              Copied!
+                            </span>
+                          )}
                         </button>
                       </div>
                     )}

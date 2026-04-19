@@ -7,7 +7,6 @@ import { SearchBar } from '../components/common/SearchBar';
 import { LoaderSkeleton } from '../components/common/LoaderSkeleton';
 import { useDebounce } from '../hooks/useDebounce';
 import { FaSearch, FaTimes } from 'react-icons/fa';
-import toast from 'react-hot-toast';
 
 export const SearchPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -16,7 +15,6 @@ export const SearchPage = () => {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [totalResults, setTotalResults] = useState(0);
-  const [searchError, setSearchError] = useState(null);
 
   const debouncedQuery = useDebounce(query, 500);
 
@@ -28,24 +26,14 @@ export const SearchPage = () => {
     }
 
     try {
-      setSearchError(null);
       setLoading(true);
-      console.log(`Searching for: "${searchQuery}"`);
-      
       const data = await newsService.searchNews(searchQuery, 1);
-      const newArticles = data.articles || [];
-      
-      console.log(`Found ${newArticles.length} results for "${searchQuery}"`);
-      setResults(newArticles);
+      setResults(data.articles || []);
       setTotalResults(data.totalResults || 0);
-      
-      if (newArticles.length === 0) {
-        toast.error(`No results found for "${searchQuery}"`);
-      }
     } catch (error) {
       console.error('Search failed:', error);
-      setSearchError('Failed to fetch search results. Please try again.');
-      toast.error('Search failed. Please try again.');
+      setResults([]);
+      setTotalResults(0);
     } finally {
       setLoading(false);
     }
@@ -73,7 +61,7 @@ export const SearchPage = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-6 pt-20 lg:pt-24">
+    <div className="container mx-auto px-4 pt-24 pb-12">
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-4 dark:text-white">Search News</h1>
         
@@ -106,12 +94,6 @@ export const SearchPage = () => {
           </div>
         )}
       </div>
-
-      {searchError && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
-          <p className="text-red-700 dark:text-red-400 text-sm">{searchError}</p>
-        </div>
-      )}
 
       {loading && results.length === 0 ? (
         <LoaderSkeleton type="grid" />

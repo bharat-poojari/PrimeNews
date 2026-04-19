@@ -10,7 +10,6 @@ import { LoaderSkeleton } from '../components/common/LoaderSkeleton';
 import { newsService } from '../services/api';
 import { Link } from 'react-router-dom';
 import { useNewsStore } from '../store/newsStore';
-import toast from 'react-hot-toast';
 
 export const HomePage = () => {
   const [apiError, setApiError] = useState(null);
@@ -70,11 +69,8 @@ export const HomePage = () => {
       
       const categoryArticles = await fetchCategoryNews(categoryId);
       setFilteredNews(categoryArticles);
-      
-      toast.success(`Showing ${categoryId} news`);
     } catch (error) {
       console.error('Failed to fetch category news:', error);
-      toast.error('Failed to load category news');
     } finally {
       setLoading(false);
     }
@@ -91,7 +87,6 @@ export const HomePage = () => {
       await fetchAllCategoriesNews();
     } catch (error) {
       console.error('Failed to fetch all categories:', error);
-      toast.error('Failed to load all categories');
     } finally {
       setLoading(false);
     }
@@ -110,7 +105,6 @@ export const HomePage = () => {
       } catch (error) {
         console.error('Failed to load initial data:', error);
         setApiError('Failed to fetch news data. Please check your API configuration.');
-        toast.error('Failed to load news');
       } finally {
         setLoading(false);
       }
@@ -138,7 +132,7 @@ export const HomePage = () => {
 
   if (apiError) {
     return (
-      <div className="container mx-auto px-4 py-8 pt-24">
+      <div className="container mx-auto px-4 pt-24 pb-12">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-2xl mx-auto">
           <h3 className="text-lg font-semibold text-red-900">API Error</h3>
           <p className="text-red-700 mt-2">{apiError}</p>
@@ -156,7 +150,7 @@ export const HomePage = () => {
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8 mt-[3.3rem] lg:mt-[3.3rem]"
+          className="mb-8 pt-16 lg:pt-20"
         >
           <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
             <div>
@@ -289,10 +283,7 @@ export const HomePage = () => {
                   e.preventDefault();
                   const email = e.target.email.value;
                   if (email) {
-                    toast.success('Subscribed successfully!');
                     e.target.reset();
-                  } else {
-                    toast.error('Please enter a valid email');
                   }
                 }}
                 className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
