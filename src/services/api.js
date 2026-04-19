@@ -5,16 +5,10 @@ const NEWS_API_KEY = import.meta.env.VITE_NEWS_API_KEY;
 const GNEWS_API_KEY = import.meta.env.VITE_GNEWS_API_KEY;
 const MEDIASTACK_API_KEY = import.meta.env.VITE_MEDIASTACK_API_KEY;
 
-console.log("API Keys status on Vercel:", {
-  newsapi: NEWS_API_KEY ? "✓ Configured" : "✗ Missing",
-  gnews: GNEWS_API_KEY ? "✓ Configured" : "✗ Missing",
-  mediastack: MEDIASTACK_API_KEY ? "✓ Configured" : "✗ Missing"
-});
-
 class NewsService {
   constructor() {
     this.api = axios.create({
-      timeout: 10000,
+      timeout: 15000,
       headers: {
         "Content-Type": "application/json",
       },
@@ -22,21 +16,8 @@ class NewsService {
   }
 
   async fetchTopHeadlines(category = "general", country = "us", page = 1) {
-    // Try NewsAPI first
-    if (NEWS_API_KEY) {
-      try {
-        const result = await this.fetchFromNewsAPI(category, country, page);
-        if (result.articles && result.articles.length > 0) {
-          console.log(`✓ NewsAPI returned ${result.articles.length} articles`);
-          return result;
-        }
-      } catch (error) {
-        console.error("NewsAPI error:", error.message);
-      }
-    }
-
-    // Try GNews second
-    if (GNEWS_API_KEY) {
+    // Try GNews first (more reliable on Vercel)
+    if (GNEWS_API_KEY && GNEWS_API_KEY !== "062379a68af3aea550e5dd82fcf479b3") {
       try {
         const result = await this.fetchFromGNews(category, country, page);
         if (result.articles && result.articles.length > 0) {
@@ -44,12 +25,25 @@ class NewsService {
           return result;
         }
       } catch (error) {
-        console.error("GNews error:", error.message);
+        console.log("GNews failed, trying NewsAPI...");
       }
     }
 
-    // Try MediaStack third
-    if (MEDIASTACK_API_KEY) {
+    // Try NewsAPI
+    if (NEWS_API_KEY && NEWS_API_KEY !== "53c492dd61354d19acbbee61aaba9de7") {
+      try {
+        const result = await this.fetchFromNewsAPI(category, country, page);
+        if (result.articles && result.articles.length > 0) {
+          console.log(`✓ NewsAPI returned ${result.articles.length} articles`);
+          return result;
+        }
+      } catch (error) {
+        console.log("NewsAPI failed, trying MediaStack...");
+      }
+    }
+
+    // Try MediaStack as last resort
+    if (MEDIASTACK_API_KEY && MEDIASTACK_API_KEY !== "2557e8713c3d622145ab692da933d6d2") {
       try {
         const result = await this.fetchFromMediaStack(category, country, page);
         if (result.articles && result.articles.length > 0) {
@@ -57,11 +51,11 @@ class NewsService {
           return result;
         }
       } catch (error) {
-        console.error("MediaStack error:", error.message);
+        console.log("MediaStack failed");
       }
     }
 
-    console.error("All APIs failed. No news available.");
+    console.error("All APIs failed. Please check your API keys.");
     return { articles: [], totalResults: 0 };
   }
 
@@ -90,7 +84,7 @@ class NewsService {
         totalResults: data.totalResults || 0,
       };
     }
-    throw new Error("No articles from NewsAPI");
+    throw new Error("No articles");
   }
 
   async fetchFromGNews(category, country, page) {
@@ -101,6 +95,10 @@ class NewsService {
 
     const response = await this.api.get(url);
     const data = response.data;
+
+    if (data.errors) {
+      throw new Error(data.errors[0]);
+    }
 
     if (data.articles && data.articles.length > 0) {
       return {
@@ -117,17 +115,21 @@ class NewsService {
         totalResults: data.totalArticles || 0,
       };
     }
-    throw new Error("No articles from GNews");
+    throw new Error("No articles");
   }
 
   async fetchFromMediaStack(category, country, page) {
-    let url = `http://api.mediastack.com/v1/news?access_key=${MEDIASTACK_API_KEY}&countries=${country}&limit=20&offset=${(page-1)*20}&sort=published_desc`;
+    let url = `https://api.mediastack.com/v1/news?access_key=${MEDIASTACK_API_KEY}&countries=${country}&limit=20&offset=${(page-1)*20}&sort=published_desc`;
     if (category && category !== "general") {
       url += `&categories=${category}`;
     }
 
     const response = await this.api.get(url);
     const data = response.data;
+
+    if (data.error) {
+      throw new Error(data.error.message);
+    }
 
     if (data.data && data.data.length > 0) {
       return {
@@ -144,13 +146,37 @@ class NewsService {
         totalResults: data.pagination?.total || 0,
       };
     }
-    throw new Error("No articles from MediaStack");
+    throw new Error("No articles");
   }
 
   async searchNews(query, page = 1) {
     if (!query?.trim()) return { articles: [], totalResults: 0 };
 
-    if (NEWS_API_KEY) {
+    // Try GNews search first
+    if (GNEWS_API_KEY && GNEWS_API_KEY !== "062379a68af3aea550e5dd82fcf479b3") {
+      try {
+        const url = `https://gnews.io/api/v4/search?token=${GNEWS_API_KEY}&q=${encodeURIComponent(query)}&max=20&page=${page}&lang=en`;
+        const response = await this.api.get(url);
+        if (response.data.articles && response.data.articles.length > 0) {
+          return {
+            articles: response.data.articles.map(a => ({
+              source: { id: null, name: a.source?.name || "GNews" },
+              author: a.author,
+              title: a.title,
+              description: a.description || "",
+              url: a.url,
+              urlToImage: a.image,
+              publishedAt: a.publishedAt,
+              content: a.content,
+            })),
+            totalResults: response.data.totalArticles || 0,
+          };
+        }
+      } catch (e) {}
+    }
+
+    // Try NewsAPI search
+    if (NEWS_API_KEY && NEWS_API_KEY !== "53c492dd61354d19acbbee61aaba9de7") {
       try {
         const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&pageSize=20&page=${page}&apiKey=${NEWS_API_KEY}`;
         const response = await this.api.get(url);
@@ -171,6 +197,7 @@ class NewsService {
         }
       } catch (e) {}
     }
+
     return { articles: [], totalResults: 0 };
   }
 
