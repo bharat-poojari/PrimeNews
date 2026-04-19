@@ -142,26 +142,35 @@ class NewsService {
   }
 
   async searchNews(query, page = 1) {
-    if (!query || query.trim() === "") {
-      return { articles: [], totalResults: 0 };
-    }
-
-    const cacheKey = `search-${query.trim()}-${page}`;
-    const cached = cacheService.get(cacheKey);
-    if (cached) return cached;
-
-    try {
-      console.log(`Searching for: ${query} using ${this.enabledApis.length} APIs`);
-      const result = await this.fetchWithFallback("fetchSearch", query, page);
-      if (result.articles && result.articles.length > 0) {
-        cacheService.set(cacheKey, result, 300);
-      }
-      return result;
-    } catch (error) {
-      console.error("Search error:", error);
-      return { articles: [], totalResults: 0 };
-    }
+  if (!query || query.trim() === "") {
+    return { articles: [], totalResults: 0 };
   }
+
+  const cacheKey = `search-${query.trim()}-${page}`;
+  const cached = cacheService.get(cacheKey);
+  if (cached) return cached;
+
+  try {
+    console.log(`Searching for: ${query} on page ${page}`);
+    const result = await this.fetchWithFallback("fetchSearch", query, page);
+    
+    // Ensure we return consistent data structure
+    const articles = result.articles || [];
+    const totalResults = result.totalResults || 0;
+    
+    console.log(`Page ${page} returned ${articles.length} articles. Total available: ${totalResults}`);
+    
+    // Cache the result
+    if (articles.length > 0) {
+      cacheService.set(cacheKey, { articles, totalResults }, 300);
+    }
+    
+    return { articles, totalResults };
+  } catch (error) {
+    console.error("Search error:", error);
+    return { articles: [], totalResults: 0 };
+  }
+}
 
   async fetchTrending(page = 1) {
     const categories = ["technology", "business", "entertainment", "sports"];
