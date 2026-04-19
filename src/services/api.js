@@ -3,8 +3,6 @@ import axios from "axios";
 import { cacheService } from "./cache";
 
 const NEWS_API_KEY = import.meta.env.VITE_NEWS_API_KEY;
-const GNEWS_API_KEY = import.meta.env.VITE_GNEWS_API_KEY;
-const MEDIASTACK_API_KEY = import.meta.env.VITE_MEDIASTACK_API_KEY;
 
 // Determine if we're in production (Vercel) or development
 const isProduction = import.meta.env.PROD;
@@ -26,7 +24,6 @@ class NewsService {
     if (cached) return cached;
 
     try {
-      // Try NewsAPI first (most reliable)
       const response = await this.api.get(`${API_BASE_URL}/news`, {
         params: {
           endpoint: 'top-headlines',
@@ -49,62 +46,39 @@ class NewsService {
     }
   }
 
-  // PrimeNews/src/services/api.js (Update the searchNews method)
-async searchNews(query, page = 1) {
-  if (!query || query.trim() === "") {
-    return { articles: [], totalResults: 0 };
-  }
+  async searchNews(query, page = 1) {
+    if (!query || query.trim() === "") {
+      return { articles: [], totalResults: 0 };
+    }
 
-  const cacheKey = `search-${query.trim()}-${page}`;
-  const cached = cacheService.get(cacheKey);
-  if (cached) return cached;
+    const cacheKey = `search-${query.trim()}-${page}`;
+    const cached = cacheService.get(cacheKey);
+    if (cached) return cached;
 
-  try {
-    console.log(`Searching for: "${query}" on page ${page}`);
-    
-    // Try multiple search variations for better results
-    const searchVariations = [
-      query.trim(),           // Original query
-      query.trim(),           // Keep as is for NewsAPI
-    ];
-    
-    let result = null;
-    
-    for (const searchTerm of searchVariations) {
-      try {
-        const response = await this.api.get(`${API_BASE_URL}/news`, {
-          params: {
-            endpoint: 'everything',
-            q: searchTerm,
-            page: page,
-            sortBy: 'publishedAt',
-            language: 'en',
-            pageSize: 30
-          }
-        });
-        
-        if (response.data.articles && response.data.articles.length > 0) {
-          result = response.data;
-          break;
+    try {
+      const response = await this.api.get(`${API_BASE_URL}/news`, {
+        params: {
+          endpoint: 'everything',
+          q: query.trim(),
+          page: page,
+          sortBy: 'publishedAt',
+          language: 'en',
+          pageSize: 30
         }
-      } catch (err) {
-        console.log(`Search variation "${searchTerm}" failed:`, err.message);
+      });
+      
+      const result = response.data;
+      if (result.articles) {
+        cacheService.set(cacheKey, result, 300);
+        return result;
       }
+      
+      return { articles: [], totalResults: 0 };
+    } catch (error) {
+      console.error("Search error:", error);
+      return { articles: [], totalResults: 0 };
     }
-    
-    if (result && result.articles) {
-      console.log(`Search successful: ${result.articles.length} results found`);
-      cacheService.set(cacheKey, result, 300);
-      return result;
-    }
-    
-    console.log(`No results found for "${query}"`);
-    return { articles: [], totalResults: 0 };
-  } catch (error) {
-    console.error("Search error:", error);
-    return { articles: [], totalResults: 0 };
   }
-}
 
   async fetchTrending(page = 1) {
     const categories = ["technology", "business", "entertainment", "sports"];
@@ -132,7 +106,7 @@ async searchNews(query, page = 1) {
 
   async fetchVideos(query = "news today", page = 1) {
     try {
-      const result = await this.searchNews(query + " video", page);
+      const result = await this.searchNews(query, page);
       return result.articles || [];
     } catch (error) {
       console.error("Failed to fetch videos:", error);
