@@ -1,255 +1,120 @@
-// src/pages/HomePage.jsx
-import { useEffect, useState } from 'react';
+// src/pages/VideoPage.jsx
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FaNewspaper, FaArrowRight, FaFilter } from 'react-icons/fa';
-import { BreakingTicker } from '../components/layout/BreakingTicker';
-import { HeroSection } from '../components/news/HeroSection';
-import { NewsCard } from '../components/news/NewsCard';
-import { CategoryTabs } from '../components/common/CategoryTabs';
+import { FaVideo, FaYoutube, FaSearch, FaPlay, FaArrowLeft } from 'react-icons/fa';
 import { LoaderSkeleton } from '../components/common/LoaderSkeleton';
 import { newsService } from '../services/api';
-import { Link } from 'react-router-dom';
-import { useNewsStore } from '../store/newsStore';
+import { useNavigate } from 'react-router-dom';
 
-export const HomePage = () => {
-  const [featuredNews, setFeaturedNews] = useState([]);
-  const [filteredNews, setFilteredNews] = useState([]);
-  const [allCategoryNews, setAllCategoryNews] = useState({});
+export const VideoPage = () => {
+  const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showAllCategories, setShowAllCategories] = useState(true);
-  const { currentCategory, setCurrentCategory } = useNewsStore();
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
 
-  const categories = ['technology', 'business', 'sports', 'entertainment', 'science', 'health'];
-
-  const fetchCategoryNews = async (category) => {
-    const data = await newsService.fetchTopHeadlines(category, 'us', 1);
-    return (data.articles || []).slice(0, 6);
-  };
-
-  const fetchFeaturedNews = async (category = currentCategory) => {
-    const headlines = await newsService.fetchTopHeadlines(category, 'us', 1);
-    setFeaturedNews(headlines.articles || []);
-  };
-
-  const fetchAllCategoriesNews = async () => {
-    const categoryData = {};
-    for (const cat of categories) {
-      const articles = await fetchCategoryNews(cat);
-      categoryData[cat] = articles;
-    }
-    setAllCategoryNews(categoryData);
-  };
-
-  const handleCategorySelect = async (categoryId) => {
-    setCurrentCategory(categoryId);
-    setShowAllCategories(false);
-    setLoading(true);
-    
-    const headlines = await newsService.fetchTopHeadlines(categoryId, 'us', 1);
-    setFeaturedNews(headlines.articles || []);
-    
-    const categoryArticles = await fetchCategoryNews(categoryId);
-    setFilteredNews(categoryArticles);
-    
-    setLoading(false);
-  };
-
-  const handleShowAllCategories = async () => {
-    setCurrentCategory('general');
-    setShowAllCategories(true);
-    setLoading(true);
-    
-    const headlines = await newsService.fetchTopHeadlines('general', 'us', 1);
-    setFeaturedNews(headlines.articles || []);
-    await fetchAllCategoriesNews();
-    
-    setLoading(false);
-  };
+  const categories = [
+    { id: 'all', name: 'All' },
+    { id: 'news', name: 'News' },
+    { id: 'sports', name: 'Sports' },
+    { id: 'entertainment', name: 'Entertainment' },
+    { id: 'technology', name: 'Tech' },
+    { id: 'business', name: 'Business' },
+  ];
 
   useEffect(() => {
-    const loadInitialData = async () => {
+    const loadVideos = async () => {
       setLoading(true);
-      const headlines = await newsService.fetchTopHeadlines('general', 'us', 1);
-      setFeaturedNews(headlines.articles || []);
-      await fetchAllCategoriesNews();
-      setShowAllCategories(true);
-      setCurrentCategory('general');
+      let query = selectedCategory === 'all' ? 'news video' : `${selectedCategory} news video`;
+      if (searchQuery) query = searchQuery;
+      
+      const result = await newsService.searchNews(query, 1);
+      const articles = (result.articles || []).slice(0, 24);
+      setVideos(articles);
       setLoading(false);
     };
-    loadInitialData();
-  }, []);
+    loadVideos();
+  }, [selectedCategory, searchQuery]);
 
-  const getCategoryDisplayName = () => {
-    const names = {
-      general: 'General', business: 'Business', technology: 'Technology',
-      entertainment: 'Entertainment', sports: 'Sports', science: 'Science', health: 'Health'
-    };
-    return names[currentCategory] || 'General';
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      setSelectedCategory('all');
+      loadVideos();
+    }
   };
 
-  if (loading && featuredNews.length === 0) {
-    return <LoaderSkeleton type="home" />;
-  }
+  const handleArticleClick = (article) => {
+    const articleId = btoa(encodeURIComponent(article.url)).substring(0, 20);
+    navigate(`/article/${articleId}`, { state: { article } });
+  };
+
+  if (loading) return <LoaderSkeleton type="grid" />;
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
-      <BreakingTicker />
-      
-      <main className="container mx-auto px-4 py-6 lg:py-8">
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-            <div>
-              <h2 className="font-serif text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-1">
-                News Categories
-              </h2>
-              <div className="w-16 h-0.5 bg-gradient-to-r from-blue-600 to-transparent" />
-            </div>
-            {!showAllCategories && (
-              <button
-                onClick={handleShowAllCategories}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors shadow-md"
-              >
-                <FaFilter className="text-xs" />
-                Show All Categories
-              </button>
-            )}
+    <div className="container-custom py-8">
+      {/* Header */}
+      <div className="mb-8">
+        <button onClick={() => navigate(-1)} className="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-blue-600 mb-4 transition-colors text-sm">
+          <FaArrowLeft className="mr-2" />
+          Back
+        </button>
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-gradient-to-r from-red-500 to-red-600 rounded-lg">
+            <FaVideo className="text-white text-xl" />
           </div>
-          <CategoryTabs 
-            onCategorySelect={handleCategorySelect} 
-            activeCategory={currentCategory}
-          />
-        </motion.section>
-
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mb-12"
-        >
-          <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-            <div>
-              <h2 className="font-serif text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                {showAllCategories ? 'Top Stories' : `${getCategoryDisplayName()} News`}
-              </h2>
-              <div className="w-12 h-0.5 bg-gradient-to-r from-blue-600 to-transparent" />
-            </div>
-            {!showAllCategories && (
-              <Link 
-                to={`/category/${currentCategory}`}
-                className="group flex items-center space-x-1 text-blue-600 hover:text-blue-700 transition-colors text-sm font-medium"
-              >
-                <span>View All {getCategoryDisplayName()} News</span>
-                <FaArrowRight className="group-hover:translate-x-1 transition-transform text-xs" />
-              </Link>
-            )}
+          <div>
+            <h1 className="text-2xl lg:text-3xl font-bold dark:text-white">Video News</h1>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">Watch the latest news stories</p>
           </div>
-          <HeroSection articles={featuredNews} />
-        </motion.section>
+        </div>
+      </div>
 
-        {!showAllCategories && filteredNews.length > 0 && (
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="mb-12"
-          >
-            <div className="mb-4">
-              <h2 className="font-serif text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-1 capitalize">
-                More {currentCategory} News
-              </h2>
-              <div className="w-12 h-0.5 bg-gradient-to-r from-blue-600 to-transparent" />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-              {filteredNews.map((article, index) => (
-                <NewsCard key={`filtered-${index}`} article={article} />
-              ))}
-            </div>
-          </motion.section>
-        )}
+      {/* Search Bar */}
+      <form onSubmit={handleSearch} className="max-w-lg mb-6">
+        <div className="flex gap-2">
+          <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search videos..." className="flex-1 px-4 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-red-500 dark:bg-gray-800 dark:text-white" />
+          <button type="submit" className="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2">
+            <FaSearch className="text-xs" /> Search
+          </button>
+        </div>
+      </form>
 
-        {showAllCategories && Object.entries(allCategoryNews).map(([category, articles], idx) => (
-          articles.length > 0 && (
-            <motion.section
-              key={category}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 + idx * 0.1 }}
-              className="mb-12"
-            >
-              <div className="relative mb-4">
-                <div className="flex items-center justify-between flex-wrap gap-3">
-                  <div>
-                    <h2 className="font-serif text-xl lg:text-2xl font-bold text-gray-900 dark:text-white capitalize mb-1">
-                      {category}
-                    </h2>
-                    <div className="w-12 h-0.5 bg-gradient-to-r from-blue-600 to-transparent" />
+      {/* Categories */}
+      <div className="flex flex-wrap gap-2 mb-8">
+        {categories.map((cat) => (
+          <button key={cat.id} onClick={() => { setSelectedCategory(cat.id); setSearchQuery(''); }} className={`px-4 py-1.5 rounded-full text-sm transition-colors ${selectedCategory === cat.id ? 'bg-red-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}`}>
+            {cat.name}
+          </button>
+        ))}
+      </div>
+
+      {/* Video Grid */}
+      {videos.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          {videos.map((video, index) => (
+            <motion.div key={video.url || index} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(index * 0.05, 0.5) }} whileHover={{ y: -4 }} className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden cursor-pointer group" onClick={() => handleArticleClick(video)}>
+              <div className="relative pb-[56.25%]">
+                <img src={video.urlToImage || `https://picsum.photos/id/${(index + 20) % 100}/400/225`} alt={video.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" onError={(e) => { e.target.src = `https://picsum.photos/id/20/400/225`; }} />
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center">
+                    <FaPlay className="text-white text-lg ml-0.5" />
                   </div>
-                  <button
-                    onClick={() => handleCategorySelect(category)}
-                    className="group flex items-center space-x-1 text-blue-600 hover:text-blue-700 transition-colors text-sm font-medium"
-                  >
-                    <span>View All</span>
-                    <FaArrowRight className="group-hover:translate-x-1 transition-transform text-xs" />
-                  </button>
                 </div>
               </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                {articles.slice(0, 6).map((article, i) => (
-                  <NewsCard key={`${category}-${i}`} article={article} />
-                ))}
+              <div className="p-3">
+                <h3 className="font-bold text-sm line-clamp-2 dark:text-white group-hover:text-red-600 transition-colors">{video.title}</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{video.source?.name || 'News Source'}</p>
               </div>
-            </motion.section>
-          )
-        ))}
-
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8 }}
-          className="my-16"
-        >
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-8 lg:p-12">
-            <div className="relative z-10 max-w-3xl mx-auto text-center">
-              <div className="inline-block p-3 bg-blue-500/20 rounded-full mb-4">
-                <FaNewspaper className="text-3xl lg:text-4xl text-blue-500" />
-              </div>
-              
-              <h2 className="font-serif text-2xl lg:text-4xl font-bold text-white mb-2">
-                Stay Informed
-              </h2>
-              <p className="text-gray-300 text-sm lg:text-base mb-6">
-                Get the latest news delivered straight to your inbox.
-              </p>
-              
-              <form 
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  e.target.reset();
-                }}
-                className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
-              >
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="Enter your email address"
-                  className="flex-1 px-4 py-2.5 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors text-sm"
-                />
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-lg text-sm"
-                >
-                  Subscribe
-                </button>
-              </form>
-            </div>
-          </div>
-        </motion.section>
-      </main>
+            </motion.div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12">
+          <FaVideo className="text-5xl text-gray-400 mx-auto mb-3" />
+          <p className="text-gray-500 dark:text-gray-400">No videos found. Try a different search term.</p>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,4 +1,4 @@
-// src/pages/HomePage.jsx
+// src/pages/HomePage.jsx - Optimized version
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { FaNewspaper, FaArrowRight, FaFilter } from 'react-icons/fa';
@@ -27,11 +27,14 @@ export const HomePage = () => {
   };
 
   const fetchAllCategoriesNews = async () => {
+    // Parallel fetching for all categories - MUCH FASTER
+    const promises = categories.map(cat => fetchCategoryNews(cat));
+    const results = await Promise.all(promises);
+    
     const categoryData = {};
-    for (const cat of categories) {
-      const articles = await fetchCategoryNews(cat);
-      categoryData[cat] = articles;
-    }
+    categories.forEach((cat, index) => {
+      categoryData[cat] = results[index];
+    });
     setAllCategoryNews(categoryData);
   };
 
@@ -40,12 +43,14 @@ export const HomePage = () => {
     setShowAllCategories(false);
     setLoading(true);
     
-    const headlines = await newsService.fetchTopHeadlines(categoryId, 'us', 1);
+    // Parallel fetch for both headline and category news
+    const [headlines, categoryArticles] = await Promise.all([
+      newsService.fetchTopHeadlines(categoryId, 'us', 1),
+      fetchCategoryNews(categoryId)
+    ]);
+    
     setFeaturedNews(headlines.articles || []);
-    
-    const categoryArticles = await fetchCategoryNews(categoryId);
     setFilteredNews(categoryArticles);
-    
     setLoading(false);
   };
 
@@ -54,23 +59,32 @@ export const HomePage = () => {
     setShowAllCategories(true);
     setLoading(true);
     
-    const headlines = await newsService.fetchTopHeadlines('general', 'us', 1);
-    setFeaturedNews(headlines.articles || []);
-    await fetchAllCategoriesNews();
+    // Parallel fetch for all data
+    const [headlines, categoryData] = await Promise.all([
+      newsService.fetchTopHeadlines('general', 'us', 1),
+      fetchAllCategoriesNews()
+    ]);
     
+    setFeaturedNews(headlines.articles || []);
     setLoading(false);
   };
 
   useEffect(() => {
     const loadInitialData = async () => {
       setLoading(true);
-      const headlines = await newsService.fetchTopHeadlines('general', 'us', 1);
+      
+      // Parallel fetch for initial data - MUCH FASTER
+      const [headlines, categoryData] = await Promise.all([
+        newsService.fetchTopHeadlines('general', 'us', 1),
+        fetchAllCategoriesNews()
+      ]);
+      
       setFeaturedNews(headlines.articles || []);
-      await fetchAllCategoriesNews();
       setShowAllCategories(true);
       setCurrentCategory('general');
       setLoading(false);
     };
+    
     loadInitialData();
   }, []);
 
@@ -82,6 +96,7 @@ export const HomePage = () => {
     return names[currentCategory] || 'General';
   };
 
+  // Show loading state only on first load
   if (loading && featuredNews.length === 0) {
     return <LoaderSkeleton type="home" />;
   }
@@ -91,16 +106,15 @@ export const HomePage = () => {
       <BreakingTicker />
       
       <main className="w-full">
-        {/* Hero Section - Full Width */}
         <div className="w-full">
           <HeroSection articles={featuredNews} />
         </div>
 
-        {/* Content with max-width for readability */}
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
             className="mb-8"
           >
             <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
@@ -129,7 +143,7 @@ export const HomePage = () => {
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+            transition={{ delay: 0.1, duration: 0.3 }}
             className="mb-12"
           >
             <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
@@ -144,7 +158,7 @@ export const HomePage = () => {
                   to={`/category/${currentCategory}`}
                   className="group flex items-center space-x-1 text-blue-600 hover:text-blue-700 transition-colors text-sm font-medium"
                 >
-                  <span>View All {getCategoryDisplayName()} News</span>
+                  <span>View All</span>
                   <FaArrowRight className="group-hover:translate-x-1 transition-transform text-xs" />
                 </Link>
               )}
@@ -155,7 +169,7 @@ export const HomePage = () => {
             <motion.section
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
+              transition={{ delay: 0.15, duration: 0.3 }}
               className="mb-12"
             >
               <div className="mb-4">
@@ -178,7 +192,7 @@ export const HomePage = () => {
                 key={category}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 + idx * 0.1 }}
+                transition={{ delay: 0.05 * idx, duration: 0.3 }}
                 className="mb-12"
               >
                 <div className="relative mb-4">
@@ -207,49 +221,6 @@ export const HomePage = () => {
               </motion.section>
             )
           ))}
-
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
-            className="my-16"
-          >
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-8 lg:p-12">
-              <div className="relative z-10 max-w-3xl mx-auto text-center">
-                <div className="inline-block p-3 bg-blue-500/20 rounded-full mb-4">
-                  <FaNewspaper className="text-3xl lg:text-4xl text-blue-500" />
-                </div>
-                
-                <h2 className="font-serif text-2xl lg:text-4xl font-bold text-white mb-2">
-                  Stay Informed
-                </h2>
-                <p className="text-gray-300 text-sm lg:text-base mb-6">
-                  Get the latest news delivered straight to your inbox.
-                </p>
-                
-                <form 
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    e.target.reset();
-                  }}
-                  className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
-                >
-                  <input
-                    type="email"
-                    name="email"
-                    placeholder="Enter your email address"
-                    className="flex-1 px-4 py-2.5 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors text-sm"
-                  />
-                  <button
-                    type="submit"
-                    className="px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-lg text-sm"
-                  >
-                    Subscribe
-                  </button>
-                </form>
-              </div>
-            </div>
-          </motion.section>
         </div>
       </main>
     </div>
