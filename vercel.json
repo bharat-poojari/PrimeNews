@@ -6,21 +6,41 @@
   "framework": "vite",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/api/news", "destination": "/api/news.js" },
-    { "source": "/(.*)", "destination": "/" }
+    {
+      "source": "/(.*)",
+      "destination": "/"
+    }
   ],
   "headers": [
     {
-      "source": "/api/(.*)",
+      "source": "/assets/(.*)",
       "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Access-Control-Allow-Methods", "value": "GET, OPTIONS" },
-        { "key": "Access-Control-Allow-Headers", "value": "Content-Type" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
       ]
     }
   ],
   "env": {
-    "VITE_NEWS_API_KEY": "83e4e21631f747069da9a0be3b153a32",
+    "VITE_NEWS_API_KEY": "53c492dd61354d19acbbee61aaba9de7",
     "VITE_GNEWS_API_KEY": "062379a68af3aea550e5dd82fcf479b3",
     "VITE_MEDIASTACK_API_KEY": "2557e8713c3d622145ab692da933d6d2",
     "VITE_APP_NAME": "PrimeNews",

@@ -4,14 +4,16 @@ import { useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { Navbar } from './components/layout/Navbar';
 import { Footer } from './components/layout/Footer';
-import { HomePage } from './pages/HomePage';
-import { CategoryPage } from './pages/CategoryPage';
-import { ArticlePage } from './pages/ArticlePage';
-import { SearchPage } from './pages/SearchPage';
-import { TrendingPage } from './pages/TrendingPage';
-import { VideoPage } from './pages/VideoPage';
-import { BookmarksPage } from './pages/BookmarksPage';
-import { ContactPage } from './pages/ContactPage';
+import { 
+  HomePage, 
+  CategoryPage, 
+  ArticlePage, 
+  SearchPage, 
+  TrendingPage, 
+  VideoPage, 
+  BookmarksPage, 
+  ContactPage 
+} from './pages';
 import { useThemeStore } from './store/themeStore';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 

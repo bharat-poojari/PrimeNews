@@ -1,22 +1,37 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
-    open: true
+    open: true,
   },
   build: {
-    outDir: 'dist',
+    outDir: "dist",
     sourcemap: false,
+    minify: "terser",
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+    },
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          ui: ['framer-motion', 'react-icons']
-        }
-      }
-    }
-  }
-})
+          vendor: ["react", "react-dom", "react-router-dom"],
+          ui: ["framer-motion", "react-icons"],
+          utils: ["axios", "date-fns", "zustand"],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1000,
+  },
+  define: {
+    "process.env": {},
+  },
+  optimizeDeps: {
+    include: ["react", "react-dom", "react-router-dom", "axios", "zustand"],
+  },
+});
