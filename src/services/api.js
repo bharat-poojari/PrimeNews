@@ -49,36 +49,62 @@ class NewsService {
     }
   }
 
-  async searchNews(query, page = 1) {
-    if (!query || query.trim() === "") {
-      return { articles: [], totalResults: 0 };
-    }
-
-    const cacheKey = `search-${query.trim()}-${page}`;
-    const cached = cacheService.get(cacheKey);
-    if (cached) return cached;
-
-    try {
-      const response = await this.api.get(`${API_BASE_URL}/news`, {
-        params: {
-          endpoint: 'everything',
-          q: query.trim(),
-          page: page
-        }
-      });
-      
-      const result = response.data;
-      if (result.articles) {
-        cacheService.set(cacheKey, result, 300);
-        return result;
-      }
-      
-      return { articles: [], totalResults: 0 };
-    } catch (error) {
-      console.error("Search error:", error);
-      return { articles: [], totalResults: 0 };
-    }
+  // PrimeNews/src/services/api.js (Update the searchNews method)
+async searchNews(query, page = 1) {
+  if (!query || query.trim() === "") {
+    return { articles: [], totalResults: 0 };
   }
+
+  const cacheKey = `search-${query.trim()}-${page}`;
+  const cached = cacheService.get(cacheKey);
+  if (cached) return cached;
+
+  try {
+    console.log(`Searching for: "${query}" on page ${page}`);
+    
+    // Try multiple search variations for better results
+    const searchVariations = [
+      query.trim(),           // Original query
+      query.trim(),           // Keep as is for NewsAPI
+    ];
+    
+    let result = null;
+    
+    for (const searchTerm of searchVariations) {
+      try {
+        const response = await this.api.get(`${API_BASE_URL}/news`, {
+          params: {
+            endpoint: 'everything',
+            q: searchTerm,
+            page: page,
+            sortBy: 'publishedAt',
+            language: 'en',
+            pageSize: 30
+          }
+        });
+        
+        if (response.data.articles && response.data.articles.length > 0) {
+          result = response.data;
+          break;
+        }
+      } catch (err) {
+        console.log(`Search variation "${searchTerm}" failed:`, err.message);
+      }
+    }
+    
+    if (result && result.articles) {
+      console.log(`Search successful: ${result.articles.length} results found`);
+      cacheService.set(cacheKey, result, 300);
+      return result;
+    }
+    
+    console.log(`No results found for "${query}"`);
+    return { articles: [], totalResults: 0 };
+  } catch (error) {
+    console.error("Search error:", error);
+    return { articles: [], totalResults: 0 };
+  }
+}
 
   async fetchTrending(page = 1) {
     const categories = ["technology", "business", "entertainment", "sports"];

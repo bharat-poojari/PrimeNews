@@ -33,9 +33,12 @@ export const SearchPage = () => {
 
     try {
       setSearchError(null);
+      console.log(`Searching for: "${searchQuery}" on page ${pageNum}`);
       
       const data = await newsService.searchNews(searchQuery, pageNum);
       const newArticles = data.articles || [];
+      
+      console.log(`Found ${newArticles.length} results for "${searchQuery}"`);
       
       if (isLoadMore) {
         setResults(prev => {
@@ -44,7 +47,6 @@ export const SearchPage = () => {
           return [...prev, ...uniqueNewArticles];
         });
       } else {
-        // Clear previous results when it's a new search
         setResults(newArticles);
       }
       
@@ -56,6 +58,10 @@ export const SearchPage = () => {
       
       setHasMore(hasMorePages);
       setCurrentSearchQuery(searchQuery);
+      
+      if (newArticles.length === 0 && !isLoadMore) {
+        setSearchError(`No results found for "${searchQuery}". Try different keywords.`);
+      }
       
       return newArticles;
     } catch (error) {
@@ -106,10 +112,12 @@ export const SearchPage = () => {
       setResults([]);
       setHasMore(true);
       setLoading(true);
+      setSearchError(null);
       performSearch(debouncedQuery, 1, false).finally(() => setLoading(false));
     } else {
       setResults([]);
       setHasMore(false);
+      setSearchError(null);
     }
   }, [debouncedQuery, performSearch]);
 
@@ -119,6 +127,7 @@ export const SearchPage = () => {
       setPage(1);
       setResults([]);
       setHasMore(true);
+      setSearchError(null);
     }
   };
 
@@ -128,7 +137,11 @@ export const SearchPage = () => {
     setHasMore(false);
     setPage(1);
     setCurrentSearchQuery('');
+    setSearchError(null);
   };
+
+  // Example search suggestions
+  const exampleSearches = ['technology', 'business', 'sports', 'entertainment', 'health', 'science', 'world news', 'india', 'cricket', 'bollywood'];
 
   return (
     <div className="container mx-auto px-4 py-6 pt-20 lg:pt-24">
@@ -140,8 +153,28 @@ export const SearchPage = () => {
             initialValue={query}
             onSearch={handleSearch}
             autoFocus={true}
+            placeholder="Search for news, topics, or categories..."
           />
         </div>
+
+        {!query && !results.length && (
+          <div className="mt-6">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 text-center">
+              Try searching for:
+            </p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {exampleSearches.map((example) => (
+                <button
+                  key={example}
+                  onClick={() => handleSearch(example)}
+                  className="px-3 py-1.5 text-xs bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                >
+                  {example}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {query && results.length > 0 && (
           <div className="flex items-center justify-end mb-4">
@@ -157,8 +190,11 @@ export const SearchPage = () => {
       </div>
 
       {searchError && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
-          <p className="text-red-700 dark:text-red-400 text-sm">{searchError}</p>
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6">
+          <p className="text-yellow-800 dark:text-yellow-300 text-sm">{searchError}</p>
+          <p className="text-yellow-600 dark:text-yellow-400 text-xs mt-1">
+            Try using more general terms like "technology", "business", or "world news"
+          </p>
         </div>
       )}
 
@@ -182,15 +218,35 @@ export const SearchPage = () => {
             )}
           </div>
         </>
-      ) : query && !loading ? (
+      ) : query && !loading && !searchError ? (
         <div className="text-center py-12">
           <div className="inline-block p-4 bg-gray-100 dark:bg-gray-800 rounded-full mb-4">
             <FaSearch className="text-4xl text-gray-400" />
           </div>
           <h3 className="text-lg font-semibold mb-2 dark:text-white">No results found</h3>
-          <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto text-sm">
-            We couldn't find any news matching "{query}". Try different keywords.
+          <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto text-sm mb-4">
+            We couldn't find any news matching "{query}".
           </p>
+          <div className="flex flex-wrap justify-center gap-2">
+            <button
+              onClick={() => handleSearch('technology')}
+              className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Try Technology News
+            </button>
+            <button
+              onClick={() => handleSearch('business')}
+              className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Try Business News
+            </button>
+            <button
+              onClick={() => handleSearch('sports')}
+              className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Try Sports News
+            </button>
+          </div>
         </div>
       ) : null}
     </div>
