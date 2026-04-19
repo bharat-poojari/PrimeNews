@@ -64,6 +64,7 @@ export const CategoryTabs = ({ onCategorySelect, activeCategory = 'general' }) =
         <button
           onClick={() => handleScroll('left')}
           className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white dark:bg-gray-800 rounded-full shadow-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
+          aria-label="Scroll left"
         >
           <FaChevronLeft className="text-gray-600 dark:text-gray-400 text-sm" />
         </button>
@@ -95,13 +96,6 @@ export const CategoryTabs = ({ onCategorySelect, activeCategory = 'general' }) =
               >
                 <category.icon className={`text-sm md:text-base ${isActive ? 'animate-pulse' : ''}`} />
                 <span className="font-semibold">{category.name}</span>
-                {isActive && (
-                  <motion.div
-                    layoutId="activeTab"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-current rounded-full"
-                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                  />
-                )}
               </motion.button>
             );
           })}
@@ -112,6 +106,7 @@ export const CategoryTabs = ({ onCategorySelect, activeCategory = 'general' }) =
         <button
           onClick={() => handleScroll('right')}
           className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white dark:bg-gray-800 rounded-full shadow-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
+          aria-label="Scroll right"
         >
           <FaChevronRight className="text-gray-600 dark:text-gray-400 text-sm" />
         </button>

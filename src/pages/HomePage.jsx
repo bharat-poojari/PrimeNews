@@ -10,7 +10,6 @@ import { LoaderSkeleton } from '../components/common/LoaderSkeleton';
 import { newsService } from '../services/api';
 import { Link } from 'react-router-dom';
 import { useNewsStore } from '../store/newsStore';
-import toast from 'react-hot-toast';
 
 export const HomePage = () => {
   const [apiError, setApiError] = useState(null);
@@ -22,7 +21,6 @@ export const HomePage = () => {
   const [showAllCategories, setShowAllCategories] = useState(true);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const [totalResults, setTotalResults] = useState(0);
   const observerRef = useRef(null);
   const loadingRef = useRef(null);
   const { currentCategory, setCurrentCategory } = useNewsStore();
@@ -46,7 +44,6 @@ export const HomePage = () => {
       
       if (isLoadMore) {
         setFeaturedNews(prev => {
-          // Remove duplicates based on URL
           const existingUrls = new Set(prev.map(a => a.url));
           const newArticles = articles.filter(a => !existingUrls.has(a.url));
           return [...prev, ...newArticles];
@@ -55,14 +52,11 @@ export const HomePage = () => {
         setFeaturedNews(articles);
       }
       
-      setTotalResults(headlines.totalResults || 0);
-      const hasMoreData = articles.length === 30 && (pageNum * 30) < (headlines.totalResults || 0);
-      setHasMore(hasMoreData);
-      
+      setHasMore(articles.length === 30);
       return articles;
     } catch (error) {
       console.error('Failed to fetch featured news:', error);
-      setApiError('Failed to fetch news data. Please check your API configuration.');
+      setApiError('Failed to fetch news data');
       return [];
     }
   }, [currentCategory]);
@@ -91,16 +85,12 @@ export const HomePage = () => {
     try {
       const headlines = await newsService.fetchTopHeadlines(categoryId, 'us', 1);
       setFeaturedNews(headlines.articles || []);
-      setTotalResults(headlines.totalResults || 0);
-      setHasMore(headlines.articles?.length === 30 && 30 < (headlines.totalResults || 0));
+      setHasMore(headlines.articles?.length === 30);
       
       const categoryArticles = await fetchCategoryNews(categoryId);
       setFilteredNews(categoryArticles);
-      
-      toast.success(`Showing ${categoryId} news`);
     } catch (error) {
       console.error('Failed to fetch category news:', error);
-      toast.error('Failed to load category news');
     } finally {
       setLoading(false);
     }
@@ -117,12 +107,10 @@ export const HomePage = () => {
     try {
       const headlines = await newsService.fetchTopHeadlines('general', 'us', 1);
       setFeaturedNews(headlines.articles || []);
-      setTotalResults(headlines.totalResults || 0);
-      setHasMore(headlines.articles?.length === 30 && 30 < (headlines.totalResults || 0));
+      setHasMore(headlines.articles?.length === 30);
       await fetchAllCategoriesNews();
     } catch (error) {
       console.error('Failed to fetch all categories:', error);
-      toast.error('Failed to load all categories');
     } finally {
       setLoading(false);
     }
@@ -138,7 +126,6 @@ export const HomePage = () => {
       setPage(nextPage);
     } catch (error) {
       console.error('Failed to load more:', error);
-      toast.error('Failed to load more articles');
     } finally {
       setLoadingMore(false);
     }
@@ -146,11 +133,11 @@ export const HomePage = () => {
 
   // Setup intersection observer for infinite scroll
   useEffect(() => {
-    if (loadingMore || !hasMore) return;
+    if (loadingMore || !hasMore || loading || showAllCategories) return;
     
     const options = {
       root: null,
-      rootMargin: '100px',
+      rootMargin: '200px',
       threshold: 0.1
     };
     
@@ -171,7 +158,7 @@ export const HomePage = () => {
         observerRef.current.disconnect();
       }
     };
-  }, [loadingMore, hasMore, loading, loadMoreFeatured]);
+  }, [loadingMore, hasMore, loading, loadMoreFeatured, showAllCategories]);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -180,15 +167,13 @@ export const HomePage = () => {
       try {
         const headlines = await newsService.fetchTopHeadlines('general', 'us', 1);
         setFeaturedNews(headlines.articles || []);
-        setTotalResults(headlines.totalResults || 0);
-        setHasMore(headlines.articles?.length === 30 && 30 < (headlines.totalResults || 0));
+        setHasMore(headlines.articles?.length === 30);
         await fetchAllCategoriesNews();
         setShowAllCategories(true);
         setCurrentCategory('general');
       } catch (error) {
         console.error('Failed to load initial data:', error);
-        setApiError('Failed to fetch news data. Please check your API configuration.');
-        toast.error('Failed to load news');
+        setApiError('Failed to fetch news data');
       } finally {
         setLoading(false);
       }
@@ -218,9 +203,14 @@ export const HomePage = () => {
     return (
       <div className="container mx-auto px-4 py-8 pt-24">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-2xl mx-auto">
-          <h3 className="text-lg font-semibold text-red-900">API Error</h3>
-          <p className="text-red-700 mt-2">{apiError}</p>
-          <p className="text-red-600 text-sm mt-2">Please add valid API keys to your .env file</p>
+          <h3 className="text-lg font-semibold text-red-900">Unable to Load News</h3>
+          <p className="text-red-700 mt-2">Please check your internet connection and try again.</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
@@ -388,11 +378,11 @@ export const HomePage = () => {
                 onSubmit={(e) => {
                   e.preventDefault();
                   const email = e.target.email.value;
-                  if (email) {
-                    toast.success('Subscribed successfully!');
+                  if (email && email.includes('@')) {
+                    alert('Subscribed successfully!');
                     e.target.reset();
                   } else {
-                    toast.error('Please enter a valid email');
+                    alert('Please enter a valid email');
                   }
                 }}
                 className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
