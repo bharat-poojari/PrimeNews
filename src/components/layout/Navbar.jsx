@@ -3,16 +3,8 @@ import { useState, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  FaBars, 
-  FaTimes, 
-  FaSearch, 
-  FaMoon, 
-  FaSun,
-  FaBookmark,
-  FaFire,
-  FaVideo,
-  FaHome,
-  FaNewspaper
+  FaBars, FaTimes, FaSearch, FaMoon, FaSun,
+  FaBookmark, FaFire, FaVideo, FaHome
 } from 'react-icons/fa';
 import { useThemeStore } from '../../store/themeStore';
 
@@ -52,12 +44,12 @@ export const Navbar = () => {
 
   return (
     <>
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 w-full ${
         scrolled 
           ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 shadow-lg' 
           : 'bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700'
       }`}>
-        <nav className="container mx-auto px-4">
+        <div className="w-full px-4 lg:px-6">
           <div className="flex items-center justify-between h-14 lg:h-16">
             {/* Logo */}
             <Link to="/" className="flex items-center shrink-0" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
@@ -114,7 +106,7 @@ export const Navbar = () => {
               </button>
             </div>
           </div>
-        </nav>
+        </div>
 
         {/* Mobile Menu */}
         <AnimatePresence>
@@ -124,9 +116,9 @@ export const Navbar = () => {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
-              className="lg:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg"
+              className="lg:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg w-full"
             >
-              <div className="container mx-auto px-4 py-4">
+              <div className="px-4 py-4">
                 <div className="space-y-2">
                   {navItems.map((item, index) => (
                     <motion.div
@@ -157,8 +149,6 @@ export const Navbar = () => {
           )}
         </AnimatePresence>
       </header>
-      {/* Spacer to prevent content from hiding under navbar */}
-      <div className="h-14 lg:h-16" />
     </>
   );
 };
