@@ -2,7 +2,7 @@
 
 <div align="center">
   
-  ![PrimeNews Logo](https://the-prime-news.vercel.app/favicon.ico)
+  ![PrimeNews Logo](https://the-prime-news.vercel.app/public/logo.png)
 
   ### 🌟 Live Demo: [the-prime-news.vercel.app](https://the-prime-news.vercel.app)
 
