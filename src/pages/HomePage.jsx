@@ -1,5 +1,5 @@
 // PrimeNews/src/pages/HomePage.jsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { FaNewspaper, FaArrowRight, FaFilter } from 'react-icons/fa';
 import { BreakingTicker } from '../components/layout/BreakingTicker';
@@ -12,17 +12,21 @@ import { Link } from 'react-router-dom';
 import { useNewsStore } from '../store/newsStore';
 
 export const HomePage = () => {
-  const [apiError, setApiError] = useState(null);
   const [featuredNews, setFeaturedNews] = useState([]);
   const [filteredNews, setFilteredNews] = useState([]);
   const [allCategoryNews, setAllCategoryNews] = useState({});
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [showAllCategories, setShowAllCategories] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const observerRef = useRef(null);
+  const loadingRef = useRef(null);
   const { currentCategory, setCurrentCategory } = useNewsStore();
 
   const categories = ['technology', 'business', 'sports', 'entertainment', 'science', 'health'];
 
-  const fetchCategoryNews = async (category, pageNum = 1) => {
+  const fetchCategoryNews = useCallback(async (category, pageNum = 1) => {
     try {
       const data = await newsService.fetchTopHeadlines(category, 'us', pageNum);
       return (data.articles || []).slice(0, 6);
@@ -30,22 +34,32 @@ export const HomePage = () => {
       console.error(`Failed to fetch ${category}:`, err);
       return [];
     }
-  };
+  }, []);
 
-  const fetchFeaturedNews = async (category = currentCategory) => {
+  const fetchFeaturedNews = useCallback(async (category = currentCategory, pageNum = 1, isLoadMore = false) => {
     try {
-      const headlines = await newsService.fetchTopHeadlines(category, 'us', 1);
+      const headlines = await newsService.fetchTopHeadlines(category, 'us', pageNum);
       const articles = headlines.articles || [];
-      setFeaturedNews(articles);
+      
+      if (isLoadMore) {
+        setFeaturedNews(prev => {
+          const existingUrls = new Set(prev.map(a => a.url));
+          const newArticles = articles.filter(a => !existingUrls.has(a.url));
+          return [...prev, ...newArticles];
+        });
+      } else {
+        setFeaturedNews(articles);
+      }
+      
+      setHasMore(articles.length === 30);
       return articles;
     } catch (error) {
       console.error('Failed to fetch featured news:', error);
-      setApiError('Failed to fetch news data. Please check your API configuration.');
       return [];
     }
-  };
+  }, [currentCategory]);
 
-  const fetchAllCategoriesNews = async () => {
+  const fetchAllCategoriesNews = useCallback(async () => {
     const categoryData = {};
     
     await Promise.all(
@@ -56,62 +70,107 @@ export const HomePage = () => {
     );
     
     setAllCategoryNews(categoryData);
-  };
+  }, [fetchCategoryNews]);
 
-  const handleCategorySelect = async (categoryId) => {
+  const handleCategorySelect = useCallback(async (categoryId) => {
     setCurrentCategory(categoryId);
     setShowAllCategories(false);
-    setLoading(true);
+    setFeaturedNews([]);
+    setFilteredNews([]);
+    setPage(1);
+    setHasMore(true);
     
     try {
       const headlines = await newsService.fetchTopHeadlines(categoryId, 'us', 1);
       setFeaturedNews(headlines.articles || []);
+      setHasMore(headlines.articles?.length === 30);
       
       const categoryArticles = await fetchCategoryNews(categoryId);
       setFilteredNews(categoryArticles);
     } catch (error) {
       console.error('Failed to fetch category news:', error);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [setCurrentCategory, fetchCategoryNews]);
 
-  const handleShowAllCategories = async () => {
+  const handleShowAllCategories = useCallback(async () => {
     setCurrentCategory('general');
     setShowAllCategories(true);
-    setLoading(true);
+    setFeaturedNews([]);
+    setPage(1);
+    setHasMore(true);
     
     try {
       const headlines = await newsService.fetchTopHeadlines('general', 'us', 1);
       setFeaturedNews(headlines.articles || []);
+      setHasMore(headlines.articles?.length === 30);
       await fetchAllCategoriesNews();
     } catch (error) {
       console.error('Failed to fetch all categories:', error);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [setCurrentCategory, fetchAllCategoriesNews]);
+
+  const loadMoreFeatured = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+    
+    setLoadingMore(true);
+    const nextPage = page + 1;
+    try {
+      await fetchFeaturedNews(currentCategory, nextPage, true);
+      setPage(nextPage);
+    } catch (error) {
+      console.error('Failed to load more:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loadingMore, hasMore, page, currentCategory, fetchFeaturedNews]);
+
+  useEffect(() => {
+    if (loadingMore || !hasMore || initialLoading || showAllCategories) return;
+    
+    const options = {
+      root: null,
+      rootMargin: '200px',
+      threshold: 0.1
+    };
+    
+    observerRef.current = new IntersectionObserver((entries) => {
+      const firstEntry = entries[0];
+      if (firstEntry.isIntersecting && !loadingMore && hasMore && !initialLoading) {
+        loadMoreFeatured();
+      }
+    }, options);
+    
+    const currentLoadingRef = loadingRef.current;
+    if (currentLoadingRef) {
+      observerRef.current.observe(currentLoadingRef);
+    }
+    
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, [loadingMore, hasMore, initialLoading, loadMoreFeatured, showAllCategories]);
 
   useEffect(() => {
     const loadInitialData = async () => {
-      setLoading(true);
-      setApiError(null);
+      setInitialLoading(true);
       try {
         const headlines = await newsService.fetchTopHeadlines('general', 'us', 1);
         setFeaturedNews(headlines.articles || []);
+        setHasMore(headlines.articles?.length === 30);
         await fetchAllCategoriesNews();
         setShowAllCategories(true);
         setCurrentCategory('general');
       } catch (error) {
         console.error('Failed to load initial data:', error);
-        setApiError('Failed to fetch news data. Please check your API configuration.');
       } finally {
-        setLoading(false);
+        setInitialLoading(false);
       }
     };
 
     loadInitialData();
-  }, []);
+  }, [fetchAllCategoriesNews, setCurrentCategory]);
 
   const getCategoryDisplayName = () => {
     const names = {
@@ -126,20 +185,8 @@ export const HomePage = () => {
     return names[currentCategory] || 'General';
   };
 
-  if (loading && featuredNews.length === 0) {
+  if (initialLoading) {
     return <LoaderSkeleton type="home" />;
-  }
-
-  if (apiError) {
-    return (
-      <div className="container mx-auto px-4 pt-24 pb-12">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-2xl mx-auto">
-          <h3 className="text-lg font-semibold text-red-900">API Error</h3>
-          <p className="text-red-700 mt-2">{apiError}</p>
-          <p className="text-red-600 text-sm mt-2">Please add valid API keys to your .env file</p>
-        </div>
-      </div>
-    );
   }
 
   return (
@@ -150,7 +197,7 @@ export const HomePage = () => {
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8 pt-16 lg:pt-20"
+          className="mb-8 mt-[3.3rem] lg:mt-[3.3rem]"
         >
           <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
             <div>
@@ -194,7 +241,7 @@ export const HomePage = () => {
                 className="group flex items-center space-x-1 text-blue-600 hover:text-blue-700 transition-colors text-sm font-medium"
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               >
-                <span>View All {getCategoryDisplayName()} News</span>
+                <span>View All</span>
                 <FaArrowRight className="group-hover:translate-x-1 transition-transform text-xs" />
               </Link>
             )}
@@ -217,7 +264,7 @@ export const HomePage = () => {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               {filteredNews.map((article, index) => (
-                <NewsCard key={`filtered-${index}`} article={article} />
+                <NewsCard key={`filtered-${article.url || index}`} article={article} />
               ))}
             </div>
           </motion.section>
@@ -252,12 +299,23 @@ export const HomePage = () => {
               
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {articles.slice(0, 6).map((article, i) => (
-                  <NewsCard key={`${category}-${i}`} article={article} />
+                  <NewsCard key={`${category}-${article.url || i}`} article={article} />
                 ))}
               </div>
             </motion.section>
           )
         ))}
+
+        {!showAllCategories && (
+          <div ref={loadingRef} className="text-center py-8">
+            {loadingMore && (
+              <div className="inline-flex items-center space-x-3">
+                <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-gray-600 dark:text-gray-400 text-sm">Loading more articles...</span>
+              </div>
+            )}
+          </div>
+        )}
 
         <motion.section
           initial={{ opacity: 0, y: 20 }}
@@ -270,20 +328,21 @@ export const HomePage = () => {
               <div className="inline-block p-3 bg-blue-500/20 rounded-full mb-4">
                 <FaNewspaper className="text-3xl lg:text-4xl text-blue-500" />
               </div>
-              
               <h2 className="font-serif text-2xl lg:text-4xl font-bold text-white mb-2">
                 Stay Informed
               </h2>
               <p className="text-gray-300 text-sm lg:text-base mb-6">
                 Get the latest news delivered straight to your inbox.
               </p>
-              
               <form 
                 onSubmit={(e) => {
                   e.preventDefault();
                   const email = e.target.email.value;
-                  if (email) {
+                  if (email && email.includes('@')) {
+                    alert('Subscribed successfully!');
                     e.target.reset();
+                  } else {
+                    alert('Please enter a valid email');
                   }
                 }}
                 className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
@@ -302,7 +361,6 @@ export const HomePage = () => {
                   Subscribe
                 </button>
               </form>
-              
               <p className="text-gray-400 text-xs mt-3">
                 We respect your privacy. Unsubscribe at any time.
               </p>

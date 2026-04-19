@@ -1,8 +1,8 @@
-// PrimeNews/src/pages/BookmarksPage.jsx
 import { motion } from 'framer-motion';
 import { FaBookmark, FaTrash } from 'react-icons/fa';
 import { useBookmarkStore } from '../store/bookmarkStore';
 import { Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 export const BookmarksPage = () => {
   const { bookmarks, clearAllBookmarks } = useBookmarkStore();
@@ -10,12 +10,13 @@ export const BookmarksPage = () => {
   const handleClearAll = () => {
     if (window.confirm('Are you sure you want to clear all bookmarks?')) {
       clearAllBookmarks();
+      toast.success('All bookmarks cleared');
     }
   };
 
   if (bookmarks.length === 0) {
     return (
-      <div className="container mx-auto px-4 pt-24 pb-12">
+      <div className="container mx-auto px-4 py-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -40,7 +41,7 @@ export const BookmarksPage = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 pt-24 pb-12">
+    <div className="container mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -76,14 +77,11 @@ export const BookmarksPage = () => {
                   src={article.urlToImage}
                   alt={article.title}
                   className="w-16 h-16 object-cover rounded"
-                  onError={(e) => {
-                    e.target.src = 'https://picsum.photos/id/20/100/100';
-                  }}
                 />
               )}
               <div className="flex-1 min-w-0">
                 <Link 
-                  to={`/article/${btoa(encodeURIComponent(article.url)).substring(0, 20)}`}
+                  to={`/article/${btoa(article.url).substring(0, 10)}`}
                   state={{ article }}
                   className="hover:text-blue-600 dark:hover:text-blue-400"
                   onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
@@ -93,7 +91,7 @@ export const BookmarksPage = () => {
                   </h3>
                 </Link>
                 <p className="text-xs text-gray-600 dark:text-gray-400">
-                  {article.source?.name || 'News Source'}
+                  {article.source.name}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
                   {new Date(article.bookmarkedAt).toLocaleDateString()}
