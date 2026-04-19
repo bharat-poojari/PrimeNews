@@ -1,5 +1,5 @@
 // PrimeNews/src/components/layout/Navbar.jsx
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -20,7 +20,6 @@ export const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const { isDark, toggleTheme } = useThemeStore();
   const navigate = useNavigate();
-  const menuRef = useRef(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -29,17 +28,6 @@ export const Navbar = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target) && isOpen) {
-        setIsOpen(false);
-      }
-    };
-    
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -125,12 +113,11 @@ export const Navbar = () => {
         <AnimatePresence>
           {isOpen && (
             <motion.div
-              ref={menuRef}
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
-              className="lg:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg"
+              className="lg:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
             >
               <div className="container mx-auto px-4 py-4">
                 <div className="space-y-2">

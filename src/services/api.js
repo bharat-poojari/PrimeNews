@@ -6,7 +6,7 @@ const GNEWS_API_KEY = import.meta.env.VITE_GNEWS_API_KEY;
 class NewsService {
   constructor() {
     this.api = axios.create({
-      timeout: 30000,
+      timeout: 15000,
       headers: {
         'Content-Type': 'application/json',
       }
@@ -24,7 +24,7 @@ class NewsService {
       const response = await this.api.get(url);
       const data = response.data;
       
-      if (data.articles && data.articles.length > 0) {
+      if (data.articles) {
         const articles = data.articles.map(article => ({
           source: { id: null, name: article.source?.name || 'GNews' },
           author: article.author,
@@ -59,7 +59,7 @@ class NewsService {
       const response = await this.api.get(url);
       const data = response.data;
       
-      if (data.articles && data.articles.length > 0) {
+      if (data.articles) {
         const articles = data.articles.map(article => ({
           source: { id: null, name: article.source?.name || 'GNews' },
           author: article.author,
