@@ -1,4 +1,4 @@
-// PrimeNews/src/components/news/HeroSection.jsx
+// src/components/news/HeroSection.jsx
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
@@ -6,19 +6,14 @@ import { FaRegClock, FaRegBookmark, FaBookmark, FaArrowRight } from 'react-icons
 import { LazyLoadImage } from 'react-lazy-load-image-component';
 import { useBookmarkStore } from '../../store/bookmarkStore';
 import 'react-lazy-load-image-component/src/effects/blur.css';
+import { useState } from 'react';
 
 export const HeroSection = ({ articles }) => {
   const { addBookmark, removeBookmark, isBookmarked } = useBookmarkStore();
+  const [imageErrors, setImageErrors] = useState({});
   
   if (!articles || articles.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <div className="inline-flex items-center space-x-3">
-          <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-gray-600 dark:text-gray-400">Loading news...</span>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   const mainArticle = articles[0];
@@ -27,6 +22,14 @@ export const HeroSection = ({ articles }) => {
 
   const getArticleId = (article) => {
     return btoa(encodeURIComponent(article.url || article.title)).substring(0, 20);
+  };
+
+  const getFallbackImage = () => {
+    return 'https://picsum.photos/id/104/1200/800';
+  };
+
+  const handleImageError = (url) => {
+    setImageErrors(prev => ({ ...prev, [url]: true }));
   };
 
   const containerVariants = {
@@ -62,13 +65,14 @@ export const HeroSection = ({ articles }) => {
     >
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <motion.div variants={itemVariants} className="lg:col-span-2">
-          <article className="relative h-[500px] lg:h-[600px] rounded-2xl overflow-hidden group cursor-pointer shadow-2xl">
+          <article className="relative h-[400px] lg:h-[500px] rounded-2xl overflow-hidden group cursor-pointer shadow-2xl">
             <Link to={`/article/${getArticleId(mainArticle)}`} state={{ article: mainArticle }}>
               <LazyLoadImage
-                src={mainArticle.urlToImage || 'https://picsum.photos/id/104/1200/800'}
+                src={!imageErrors[mainArticle.url] && mainArticle.urlToImage ? mainArticle.urlToImage : getFallbackImage()}
                 alt={mainArticle.title}
                 effect="blur"
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                onError={() => handleImageError(mainArticle.url)}
               />
               
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
@@ -91,7 +95,7 @@ export const HeroSection = ({ articles }) => {
                     </span>
                   </div>
                   
-                  <h1 className="font-serif text-2xl lg:text-4xl xl:text-5xl font-bold text-white mb-3 leading-tight line-clamp-3">
+                  <h1 className="font-serif text-xl lg:text-3xl xl:text-4xl font-bold text-white mb-3 leading-tight line-clamp-3">
                     {mainArticle.title}
                   </h1>
                   
@@ -116,7 +120,7 @@ export const HeroSection = ({ articles }) => {
         <motion.div variants={itemVariants} className="space-y-4">
           {secondaryArticles.map((article, index) => (
             <motion.article
-              key={index}
+              key={article.url || index}
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 + index * 0.1 }}
@@ -127,10 +131,11 @@ export const HeroSection = ({ articles }) => {
                 <div className="flex gap-3">
                   <div className="relative w-24 h-24 lg:w-28 lg:h-28 flex-shrink-0 overflow-hidden rounded-lg">
                     <LazyLoadImage
-                      src={article.urlToImage || 'https://picsum.photos/id/20/150/150'}
+                      src={!imageErrors[article.url] && article.urlToImage ? article.urlToImage : 'https://picsum.photos/id/20/150/150'}
                       alt={article.title}
                       effect="blur"
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      onError={() => handleImageError(article.url)}
                     />
                   </div>
                   
@@ -156,7 +161,7 @@ export const HeroSection = ({ articles }) => {
               <div className="space-y-2">
                 {sideArticles.map((article, index) => (
                   <Link
-                    key={index}
+                    key={article.url || index}
                     to={`/article/${getArticleId(article)}`}
                     state={{ article }}
                     className="block group"
@@ -196,6 +201,7 @@ const BookmarkButton = ({ article }) => {
     <button
       onClick={handleBookmark}
       className="p-2 bg-white/10 backdrop-blur-sm rounded-full hover:bg-white/20 transition-all duration-300"
+      aria-label={bookmarked ? 'Remove bookmark' : 'Add bookmark'}
     >
       {bookmarked ? (
         <FaBookmark className="text-blue-400 text-sm lg:text-base" />

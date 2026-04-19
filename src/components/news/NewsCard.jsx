@@ -1,12 +1,14 @@
-// PrimeNews/src/components/news/NewsCard.jsx
+// src/components/news/NewsCard.jsx
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import { FaRegClock, FaRegBookmark, FaBookmark } from 'react-icons/fa';
 import { useBookmarkStore } from '../../store/bookmarkStore';
+import { useState } from 'react';
 
 export const NewsCard = ({ article, variant = 'default' }) => {
   const { addBookmark, removeBookmark, isBookmarked } = useBookmarkStore();
+  const [imageError, setImageError] = useState(false);
   
   if (!article) return null;
   
@@ -23,6 +25,10 @@ export const NewsCard = ({ article, variant = 'default' }) => {
     }
   };
 
+  const getFallbackImage = () => {
+    return 'https://picsum.photos/id/104/800/500';
+  };
+
   if (variant === 'featured') {
     return (
       <motion.article
@@ -33,13 +39,11 @@ export const NewsCard = ({ article, variant = 'default' }) => {
         <Link to={`/article/${articleId}`} state={{ article }} className="block h-full">
           <div className="relative h-48 lg:h-56 overflow-hidden">
             <img
-              src={article.urlToImage || 'https://picsum.photos/id/104/800/500'}
+              src={!imageError && article.urlToImage ? article.urlToImage : getFallbackImage()}
               alt={article.title}
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               loading="lazy"
-              onError={(e) => {
-                e.target.src = 'https://picsum.photos/id/104/800/500';
-              }}
+              onError={() => setImageError(true)}
             />
             <div className="absolute top-2 left-2">
               <span className="px-1.5 py-0.5 bg-blue-600 text-white text-[10px] font-semibold rounded">
@@ -87,13 +91,11 @@ export const NewsCard = ({ article, variant = 'default' }) => {
       <Link to={`/article/${articleId}`} state={{ article }} className="block h-full">
         <div className="relative h-36 sm:h-40 overflow-hidden">
           <img
-            src={article.urlToImage || 'https://picsum.photos/id/20/400/300'}
+            src={!imageError && article.urlToImage ? article.urlToImage : getFallbackImage()}
             alt={article.title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
-            onError={(e) => {
-              e.target.src = 'https://picsum.photos/id/20/400/300';
-            }}
+            onError={() => setImageError(true)}
           />
         </div>
         <div className="p-3">

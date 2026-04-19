@@ -1,3 +1,4 @@
+// src/store/newsStore.js
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -5,7 +6,7 @@ export const useNewsStore = create(
   persist(
     (set, get) => ({
       currentCategory: "general",
-      currentCountry: "in",
+      currentCountry: "us",
       searchQuery: "",
       filters: {
         sortBy: "publishedAt",
@@ -24,25 +25,27 @@ export const useNewsStore = create(
       
       addViewedArticle: (article) => {
         const { viewedArticles } = get();
-        if (viewedArticles.find((a) => a.url === article.url)) return;
-        const newArticles = [article, ...viewedArticles].slice(0, 50);
-        localStorage.setItem("viewed_articles", JSON.stringify(newArticles));
-        set({ viewedArticles: newArticles });
+        if (viewedArticles.find(a => a.url === article.url)) return;
+        const newViewed = [article, ...viewedArticles].slice(0, 50);
+        set({ viewedArticles: newViewed });
+        localStorage.setItem("viewed_articles", JSON.stringify(newViewed));
       },
       
       loadViewedArticles: () => {
         const saved = localStorage.getItem("viewed_articles");
         if (saved) {
-          set({ viewedArticles: JSON.parse(saved) });
+          try {
+            set({ viewedArticles: JSON.parse(saved) });
+          } catch (e) {
+            console.error("Failed to load viewed articles:", e);
+          }
         }
       },
       
-      clearFilters: () => set({ 
-        filters: { sortBy: "publishedAt", dateFrom: null, dateTo: null } 
+      clearFilters: () => set({
+        filters: { sortBy: "publishedAt", dateFrom: null, dateTo: null },
       }),
     }),
-    {
-      name: "news-preferences",
-    }
+    { name: "news-preferences" }
   )
 );

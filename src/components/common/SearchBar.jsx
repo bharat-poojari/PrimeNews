@@ -1,4 +1,4 @@
-// PrimeNews/src/components/common/SearchBar.jsx
+// src/components/common/SearchBar.jsx
 import { useState, useRef, useEffect } from 'react';
 import { FaSearch, FaTimes } from 'react-icons/fa';
 

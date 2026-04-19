@@ -1,10 +1,11 @@
-// PrimeNews/src/pages/VideoPage.jsx
+// src/pages/VideoPage.jsx
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaVideo, FaYoutube, FaSearch, FaPlay, FaTimes } from 'react-icons/fa';
+import { FaVideo, FaYoutube, FaSearch, FaPlay, FaTimes, FaArrowLeft } from 'react-icons/fa';
 import { LoaderSkeleton } from '../components/common/LoaderSkeleton';
 import { newsService } from '../services/api';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 export const VideoPage = () => {
   const [videos, setVideos] = useState([]);
@@ -15,6 +16,7 @@ export const VideoPage = () => {
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [error, setError] = useState(null);
   const observerRef = useRef(null);
   const loadingRef = useRef(null);
   const navigate = useNavigate();
@@ -30,6 +32,7 @@ export const VideoPage = () => {
 
   const loadVideos = useCallback(async (pageNum = 1, isLoadMore = false) => {
     try {
+      setError(null);
       let query = '';
       if (selectedCategory === 'all') {
         query = searchQuery || 'news today';
@@ -42,11 +45,13 @@ export const VideoPage = () => {
       const result = await newsService.searchNews(videoQuery, pageNum);
       const articles = result.articles || [];
       
+      // Filter for articles that might have video content
       const videoArticles = articles.filter(article => 
         article.title && 
         article.url && 
         (article.content?.toLowerCase().includes('video') || 
-         article.title?.toLowerCase().includes('video'))
+         article.title?.toLowerCase().includes('video') ||
+         article.description?.toLowerCase().includes('video'))
       );
       
       if (isLoadMore) {
@@ -56,8 +61,14 @@ export const VideoPage = () => {
       }
       
       setHasMore(videoArticles.length === 30);
+      
+      if (videoArticles.length === 0 && !isLoadMore && searchQuery) {
+        toast.error('No videos found for your search');
+      }
     } catch (error) {
       console.error('Failed to fetch videos:', error);
+      setError('Failed to load videos. Please try again.');
+      toast.error('Failed to load videos');
     }
   }, [selectedCategory, searchQuery]);
 
@@ -98,6 +109,7 @@ export const VideoPage = () => {
     setVideos([]);
     setHasMore(true);
     setLoading(true);
+    setError(null);
     loadVideos(1, false).finally(() => setLoading(false));
   }, [selectedCategory, searchQuery, loadVideos]);
 
@@ -144,7 +156,7 @@ export const VideoPage = () => {
           <div className="relative pb-[56.25%] h-0">
             <div className="absolute inset-0 bg-gray-900 flex flex-col items-center justify-center p-6">
               <FaPlay className="text-5xl text-white mb-4" />
-              <h3 className="text-white text-lg font-bold text-center mb-2">{video.title}</h3>
+              <h3 className="text-white text-lg font-bold text-center mb-2 line-clamp-2">{video.title}</h3>
               <button
                 onClick={() => {
                   window.open(video.url, '_blank');
@@ -160,7 +172,7 @@ export const VideoPage = () => {
           <div className="p-4 bg-gray-900 text-white">
             <h2 className="text-lg font-bold mb-1 line-clamp-2">{video.title}</h2>
             <p className="text-gray-400 text-xs mb-1">{video.source?.name || 'News Source'}</p>
-            <p className="text-gray-300 text-xs line-clamp-2">{video.description}</p>
+            <p className="text-gray-300 text-xs line-clamp-3">{video.description}</p>
           </div>
         </motion.div>
       </motion.div>
@@ -173,10 +185,19 @@ export const VideoPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-6 pt-20 lg:pt-24">
+      {/* Back Button */}
+      <button
+        onClick={() => navigate(-1)}
+        className="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 mb-4 transition-colors"
+      >
+        <FaArrowLeft className="mr-2" />
+        Go Back
+      </button>
+
       <div className="flex items-center justify-center mb-6">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-red-500 to-red-600 rounded-full">
-          <FaVideo className="text-white text-base" />
-          <h1 className="text-white font-bold text-base">Video News</h1>
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 rounded-full">
+          <FaVideo className="text-white text-sm lg:text-base" />
+          <h1 className="text-white font-bold text-sm lg:text-base">Video News</h1>
         </div>
       </div>
 
@@ -187,7 +208,7 @@ export const VideoPage = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search video news..."
-            className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-red-500 dark:bg-gray-800 dark:text-white"
+            className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
           />
           <button
             type="submit"
@@ -217,6 +238,21 @@ export const VideoPage = () => {
           ))}
         </div>
       </div>
+
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6 text-center">
+          <p className="text-red-700 dark:text-red-400 text-sm">{error}</p>
+          <button
+            onClick={() => {
+              setLoading(true);
+              loadVideos(1, false).finally(() => setLoading(false));
+            }}
+            className="mt-2 text-sm text-red-600 dark:text-red-400 hover:underline"
+          >
+            Try again
+          </button>
+        </div>
+      )}
 
       {videos.length > 0 && (
         <>
@@ -324,6 +360,16 @@ export const VideoPage = () => {
             </div>
           </div>
         </>
+      )}
+
+      {videos.length === 0 && !loading && !error && (
+        <div className="text-center py-12">
+          <FaVideo className="text-5xl text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2 dark:text-white">No videos found</h3>
+          <p className="text-gray-600 dark:text-gray-400">
+            Try searching for different keywords or browse other categories.
+          </p>
+        </div>
       )}
 
       <AnimatePresence>

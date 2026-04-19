@@ -1,11 +1,13 @@
+// src/pages/BookmarksPage.jsx
 import { motion } from 'framer-motion';
-import { FaBookmark, FaTrash } from 'react-icons/fa';
+import { FaBookmark, FaTrash, FaArrowLeft } from 'react-icons/fa';
 import { useBookmarkStore } from '../store/bookmarkStore';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 export const BookmarksPage = () => {
   const { bookmarks, clearAllBookmarks } = useBookmarkStore();
+  const navigate = useNavigate();
 
   const handleClearAll = () => {
     if (window.confirm('Are you sure you want to clear all bookmarks?')) {
@@ -16,7 +18,15 @@ export const BookmarksPage = () => {
 
   if (bookmarks.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 py-12 pt-20 lg:pt-24">
+        <button
+          onClick={() => navigate(-1)}
+          className="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 mb-6 transition-colors"
+        >
+          <FaArrowLeft className="mr-2" />
+          Go Back
+        </button>
+        
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -41,8 +51,17 @@ export const BookmarksPage = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="container mx-auto px-4 py-6 pt-20 lg:pt-24">
+      {/* Back Button */}
+      <button
+        onClick={() => navigate(-1)}
+        className="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 mb-4 transition-colors"
+      >
+        <FaArrowLeft className="mr-2" />
+        Go Back
+      </button>
+
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <FaBookmark className="text-blue-600 text-lg" />
@@ -69,7 +88,7 @@ export const BookmarksPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
-            className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3"
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow p-3"
           >
             <div className="flex gap-3">
               {article.urlToImage && (
@@ -77,6 +96,9 @@ export const BookmarksPage = () => {
                   src={article.urlToImage}
                   alt={article.title}
                   className="w-16 h-16 object-cover rounded"
+                  onError={(e) => {
+                    e.target.src = 'https://picsum.photos/id/104/100/100';
+                  }}
                 />
               )}
               <div className="flex-1 min-w-0">
@@ -91,10 +113,10 @@ export const BookmarksPage = () => {
                   </h3>
                 </Link>
                 <p className="text-xs text-gray-600 dark:text-gray-400">
-                  {article.source.name}
+                  {article.source?.name || 'News Source'}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                  {new Date(article.bookmarkedAt).toLocaleDateString()}
+                  Saved: {new Date(article.bookmarkedAt).toLocaleDateString()}
                 </p>
               </div>
             </div>

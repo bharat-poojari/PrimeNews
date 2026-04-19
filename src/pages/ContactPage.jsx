@@ -1,3 +1,4 @@
+// src/pages/ContactPage.jsx
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
@@ -8,10 +9,14 @@ import {
   FaFacebook, 
   FaInstagram,
   FaLinkedin,
-  FaPaperPlane
+  FaPaperPlane,
+  FaArrowLeft
 } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 export const ContactPage = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -19,6 +24,7 @@ export const ContactPage = () => {
     message: '',
   });
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -29,13 +35,32 @@ export const ContactPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
-    setSubmitted(true);
     
+    // Basic validation
+    if (!formData.name || !formData.email || !formData.subject || !formData.message) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+    
+    if (!formData.email.includes('@') || !formData.email.includes('.')) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    // Simulate form submission
     setTimeout(() => {
-      setSubmitted(false);
-      setFormData({ name: '', email: '', subject: '', message: '' });
-    }, 3000);
+      console.log('Form submitted:', formData);
+      setSubmitted(true);
+      setIsSubmitting(false);
+      toast.success('Message sent successfully!');
+      
+      setTimeout(() => {
+        setSubmitted(false);
+        setFormData({ name: '', email: '', subject: '', message: '' });
+      }, 3000);
+    }, 1000);
   };
 
   const contactInfo = [
@@ -57,15 +82,24 @@ export const ContactPage = () => {
   ];
 
   return (
-    <div className="container mx-auto px-4 py-12">
+    <div className="container mx-auto px-4 py-6 pt-20 lg:pt-24">
+      {/* Back Button */}
+      <button
+        onClick={() => navigate(-1)}
+        className="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 mb-6 transition-colors"
+      >
+        <FaArrowLeft className="mr-2" />
+        Go Back
+      </button>
+
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="text-center mb-12"
       >
-        <h1 className="text-4xl font-bold mb-4 dark:text-white">Contact Us</h1>
-        <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+        <h1 className="text-3xl lg:text-4xl font-bold mb-4 dark:text-white">Contact Us</h1>
+        <p className="text-base lg:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
           Have questions or feedback? We'd love to hear from you. 
           Reach out to our team and we'll get back to you as soon as possible.
         </p>
@@ -86,7 +120,7 @@ export const ContactPage = () => {
             </div>
             <h3 className="text-xl font-bold mb-3 dark:text-white">{info.title}</h3>
             {info.lines.map((line, i) => (
-              <p key={i} className="text-gray-600 dark:text-gray-400">
+              <p key={i} className="text-gray-600 dark:text-gray-400 text-sm">
                 {line}
               </p>
             ))}
@@ -100,7 +134,7 @@ export const ContactPage = () => {
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8"
+          className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 lg:p-8"
         >
           <h2 className="text-2xl font-bold mb-6 dark:text-white">Send Us a Message</h2>
           
@@ -114,12 +148,12 @@ export const ContactPage = () => {
               <h3 className="text-xl font-bold mb-2 text-green-800 dark:text-green-300">
                 Message Sent Successfully!
               </h3>
-              <p className="text-green-700 dark:text-green-400">
+              <p className="text-green-700 dark:text-green-400 text-sm">
                 Thank you for contacting us. We'll get back to you within 24 hours.
               </p>
             </motion.div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-5">
               <div>
                 <label className="block text-sm font-medium mb-2 dark:text-white">
                   Your Name *
@@ -130,7 +164,7 @@ export const ContactPage = () => {
                   value={formData.name}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white text-sm"
                   placeholder="John Doe"
                 />
               </div>
@@ -145,7 +179,7 @@ export const ContactPage = () => {
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white text-sm"
                   placeholder="john@example.com"
                 />
               </div>
@@ -160,7 +194,7 @@ export const ContactPage = () => {
                   value={formData.subject}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white text-sm"
                   placeholder="What is this about?"
                 />
               </div>
@@ -175,17 +209,27 @@ export const ContactPage = () => {
                   onChange={handleChange}
                   required
                   rows="5"
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white text-sm resize-none"
                   placeholder="Your message here..."
                 />
               </div>
               
               <button
                 type="submit"
-                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold flex items-center justify-center space-x-2"
+                disabled={isSubmitting}
+                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <FaPaperPlane />
-                <span>Send Message</span>
+                {isSubmitting ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Sending...</span>
+                  </>
+                ) : (
+                  <>
+                    <FaPaperPlane />
+                    <span>Send Message</span>
+                  </>
+                )}
               </button>
             </form>
           )}
@@ -202,10 +246,10 @@ export const ContactPage = () => {
             <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
               <div className="text-center">
                 <FaMapMarkerAlt className="text-5xl text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600 dark:text-gray-400">
+                <p className="text-gray-600 dark:text-gray-400 text-sm">
                   Interactive Map Placeholder
                 </p>
-                <p className="text-sm text-gray-500 dark:text-gray-500">
+                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
                   123 News Street, Media City, NY 10001
                 </p>
               </div>
@@ -215,10 +259,10 @@ export const ContactPage = () => {
           {/* Social Media */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
             <h3 className="text-xl font-bold mb-4 dark:text-white">Follow Us</h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
+            <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
               Stay connected with us on social media for the latest updates and news.
             </p>
-            <div className="flex space-x-4">
+            <div className="flex flex-wrap gap-3">
               <a
                 href="https://twitter.com"
                 target="_blank"

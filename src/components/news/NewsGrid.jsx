@@ -1,3 +1,4 @@
+// src/components/news/NewsGrid.jsx
 import { motion } from 'framer-motion';
 import { NewsCard } from './NewsCard';
 
@@ -40,7 +41,7 @@ export const NewsGrid = ({ articles, variant = 'default', columns = 3 }) => {
       className={`grid ${gridCols[columns]} gap-6`}
     >
       {articles.map((article, index) => (
-        <motion.div key={index} variants={item}>
+        <motion.div key={`${article.url}-${index}`} variants={item}>
           <NewsCard article={article} variant={variant} />
         </motion.div>
       ))}

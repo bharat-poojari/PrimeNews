@@ -1,3 +1,4 @@
+// src/store/analyticsStore.js
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -11,16 +12,16 @@ export const useAnalyticsStore = create(
       
       trackArticleClick: (url, title) => {
         const { articleClicks } = get();
-        const existing = articleClicks[url] || { count: 0, title, lastClicked: null };
+        const current = articleClicks[url] || { count: 0, title, lastClicked: null };
         set({
           articleClicks: {
             ...articleClicks,
             [url]: {
-              count: existing.count + 1,
-              title,
-              lastClicked: Date.now()
-            }
-          }
+              count: current.count + 1,
+              title: title || current.title,
+              lastClicked: Date.now(),
+            },
+          },
         });
       },
       
@@ -29,8 +30,8 @@ export const useAnalyticsStore = create(
         set({
           categoryViews: {
             ...categoryViews,
-            [category]: (categoryViews[category] || 0) + 1
-          }
+            [category]: (categoryViews[category] || 0) + 1,
+          },
         });
       },
       
@@ -57,10 +58,8 @@ export const useAnalyticsStore = create(
       
       clearAnalytics: () => {
         set({ articleClicks: {}, categoryViews: {}, searchHistory: [] });
-      }
+      },
     }),
-    {
-      name: "analytics-data"
-    }
+    { name: "analytics-data" }
   )
 );
