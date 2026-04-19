@@ -12,7 +12,6 @@ import { Link } from 'react-router-dom';
 import { useNewsStore } from '../store/newsStore';
 
 export const HomePage = () => {
-  const [apiError, setApiError] = useState(null);
   const [featuredNews, setFeaturedNews] = useState([]);
   const [filteredNews, setFilteredNews] = useState([]);
   const [allCategoryNews, setAllCategoryNews] = useState({});
@@ -56,7 +55,6 @@ export const HomePage = () => {
       return articles;
     } catch (error) {
       console.error('Failed to fetch featured news:', error);
-      setApiError('Failed to fetch news data');
       return [];
     }
   }, [currentCategory]);
@@ -163,7 +161,6 @@ export const HomePage = () => {
   useEffect(() => {
     const loadInitialData = async () => {
       setLoading(true);
-      setApiError(null);
       try {
         const headlines = await newsService.fetchTopHeadlines('general', 'us', 1);
         setFeaturedNews(headlines.articles || []);
@@ -173,7 +170,6 @@ export const HomePage = () => {
         setCurrentCategory('general');
       } catch (error) {
         console.error('Failed to load initial data:', error);
-        setApiError('Failed to fetch news data');
       } finally {
         setLoading(false);
       }
@@ -197,23 +193,6 @@ export const HomePage = () => {
 
   if (loading && featuredNews.length === 0) {
     return <LoaderSkeleton type="home" />;
-  }
-
-  if (apiError) {
-    return (
-      <div className="container mx-auto px-4 py-8 pt-24">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-2xl mx-auto">
-          <h3 className="text-lg font-semibold text-red-900">Unable to Load News</h3>
-          <p className="text-red-700 mt-2">Please check your internet connection and try again.</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
   }
 
   return (
@@ -344,11 +323,6 @@ export const HomePage = () => {
               <div className="inline-flex items-center space-x-3">
                 <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                 <span className="text-gray-600 dark:text-gray-400 text-sm">Loading more articles...</span>
-              </div>
-            )}
-            {!hasMore && featuredNews.length > 0 && (
-              <div className="text-center text-gray-500 dark:text-gray-400 py-4">
-                <p className="text-sm">You've reached the end of the articles</p>
               </div>
             )}
           </div>

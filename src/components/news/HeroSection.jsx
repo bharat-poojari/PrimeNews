@@ -1,3 +1,4 @@
+// PrimeNews/src/components/news/HeroSection.jsx
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
@@ -12,7 +13,10 @@ export const HeroSection = ({ articles }) => {
   if (!articles || articles.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500 dark:text-gray-400">Loading featured news...</p>
+        <div className="inline-flex items-center space-x-3">
+          <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-gray-600 dark:text-gray-400">Loading news...</span>
+        </div>
       </div>
     );
   }

@@ -15,19 +15,24 @@ class NewsService {
 
   async fetchTopHeadlines(category = "general", country = "us", page = 1) {
     try {
-      const response = await this.api.get('/api/news', {
-        params: {
-          endpoint: 'top-headlines',
-          country: country,
-          category: category,
-          page: page
-        }
-      });
+      // Use NewsAPI directly
+      let url = `https://newsapi.org/v2/top-headlines?country=${country}&pageSize=30&page=${page}&apiKey=${NEWS_API_KEY}`;
       
-      return {
-        articles: response.data.articles || [],
-        totalResults: response.data.totalResults || 0
-      };
+      if (category && category !== 'general') {
+        url += `&category=${category}`;
+      }
+      
+      const response = await this.api.get(url);
+      const data = response.data;
+      
+      if (data.status === 'ok') {
+        return {
+          articles: data.articles || [],
+          totalResults: data.totalResults || 0
+        };
+      }
+      
+      return { articles: [], totalResults: 0 };
     } catch (error) {
       console.error("Failed to fetch news:", error);
       return { articles: [], totalResults: 0 };
@@ -40,18 +45,18 @@ class NewsService {
     }
 
     try {
-      const response = await this.api.get('/api/news', {
-        params: {
-          endpoint: 'everything',
-          q: query.trim(),
-          page: page
-        }
-      });
+      const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&pageSize=30&page=${page}&sortBy=publishedAt&language=en&apiKey=${NEWS_API_KEY}`;
+      const response = await this.api.get(url);
+      const data = response.data;
       
-      return {
-        articles: response.data.articles || [],
-        totalResults: response.data.totalResults || 0
-      };
+      if (data.status === 'ok') {
+        return {
+          articles: data.articles || [],
+          totalResults: data.totalResults || 0
+        };
+      }
+      
+      return { articles: [], totalResults: 0 };
     } catch (error) {
       console.error("Search error:", error);
       return { articles: [], totalResults: 0 };
@@ -77,6 +82,16 @@ class NewsService {
       return uniqueArticles;
     } catch (error) {
       console.error("Failed to fetch trending:", error);
+      return [];
+    }
+  }
+
+  async fetchVideos(query = "news", page = 1) {
+    try {
+      const result = await this.searchNews(query, page);
+      return result.articles || [];
+    } catch (error) {
+      console.error("Failed to fetch videos:", error);
       return [];
     }
   }
