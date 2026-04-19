@@ -6,7 +6,6 @@ import { newsService } from '../services/api';
 import { NewsCard } from '../components/news/NewsCard';
 import { LoaderSkeleton } from '../components/common/LoaderSkeleton';
 import { FaArrowLeft } from 'react-icons/fa';
-import toast from 'react-hot-toast';
 
 const CATEGORY_MAP = {
   general: { name: 'General', color: 'blue' },
@@ -26,7 +25,6 @@ export const CategoryPage = () => {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const [totalResults, setTotalResults] = useState(0);
   const observerRef = useRef(null);
   const loadingRef = useRef(null);
 
@@ -39,7 +37,6 @@ export const CategoryPage = () => {
       
       if (isLoadMore) {
         setArticles(prev => {
-          // Remove duplicates based on URL
           const existingUrls = new Set(prev.map(a => a.url));
           const uniqueNewArticles = newArticles.filter(a => !existingUrls.has(a.url));
           return [...prev, ...uniqueNewArticles];
@@ -48,15 +45,11 @@ export const CategoryPage = () => {
         setArticles(newArticles);
       }
       
-      setTotalResults(data.totalResults || 0);
-      const hasMoreData = newArticles.length === 30 && (pageNum * 30) < (data.totalResults || 0);
-      setHasMore(hasMoreData);
-      
+      setHasMore(newArticles.length === 30);
       return newArticles;
     } catch (err) {
       console.error('Failed to fetch news:', err);
       setError('Failed to load news. Please try again.');
-      toast.error('Failed to load news');
       return [];
     }
   }, [categoryId]);
@@ -67,7 +60,7 @@ export const CategoryPage = () => {
     
     const options = {
       root: null,
-      rootMargin: '100px',
+      rootMargin: '200px',
       threshold: 0.1
     };
     
@@ -131,9 +124,6 @@ export const CategoryPage = () => {
           Back to Home
         </Link>
         <h1 className="text-3xl lg:text-4xl font-bold dark:text-white capitalize">{category.name} News</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm">
-          Showing {articles.length} of {totalResults || 'many'} articles
-        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -150,14 +140,9 @@ export const CategoryPage = () => {
             <span className="text-gray-600 dark:text-gray-400 text-sm">Loading more articles...</span>
           </div>
         )}
-        {!hasMore && articles.length > 0 && (
+        {!hasMore && !loadingMore && articles.length > 0 && (
           <div className="text-center text-gray-500 dark:text-gray-400 py-4">
-            <p className="text-sm">You've reached the end. Check back later for more news!</p>
-          </div>
-        )}
-        {hasMore && !loadingMore && articles.length > 0 && (
-          <div className="text-center text-gray-400 dark:text-gray-600 py-4">
-            <p className="text-xs">Scroll down to load more...</p>
+            <p className="text-sm">End of articles</p>
           </div>
         )}
       </div>

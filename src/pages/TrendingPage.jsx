@@ -4,7 +4,6 @@ import { FaFire } from 'react-icons/fa';
 import { newsService } from '../services/api';
 import { NewsCard } from '../components/news/NewsCard';
 import { LoaderSkeleton } from '../components/common/LoaderSkeleton';
-import toast from 'react-hot-toast';
 
 export const TrendingPage = () => {
   const [trendingArticles, setTrendingArticles] = useState([]);
@@ -21,7 +20,6 @@ export const TrendingPage = () => {
       
       if (isLoadMore) {
         setTrendingArticles(prev => {
-          // Remove duplicates based on URL
           const existingUrls = new Set(prev.map(a => a.url));
           const newArticles = articles.filter(a => !existingUrls.has(a.url));
           return [...prev, ...newArticles];
@@ -34,7 +32,6 @@ export const TrendingPage = () => {
       return articles;
     } catch (error) {
       console.error('Failed to fetch trending:', error);
-      toast.error('Failed to load trending news');
       return [];
     }
   }, []);
@@ -45,7 +42,7 @@ export const TrendingPage = () => {
     
     const options = {
       root: null,
-      rootMargin: '100px',
+      rootMargin: '200px',
       threshold: 0.1
     };
     
@@ -89,11 +86,8 @@ export const TrendingPage = () => {
       <div className="flex items-center justify-center gap-2 mb-6">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-orange-500 to-red-500 rounded-full">
           <FaFire className="text-white text-base" />
-          <h1 className="text-white font-bold text-base">Trending</h1>
+          <h1 className="text-white font-bold text-base">Trending News</h1>
         </div>
-        <p className="text-gray-600 dark:text-gray-400 text-sm">
-          {trendingArticles.length} trending stories
-        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
@@ -110,14 +104,9 @@ export const TrendingPage = () => {
             <span className="text-gray-600 dark:text-gray-400 text-sm">Loading more trending stories...</span>
           </div>
         )}
-        {!hasMore && trendingArticles.length > 0 && (
+        {!hasMore && !loadingMore && trendingArticles.length > 0 && (
           <div className="text-center text-gray-500 dark:text-gray-400 py-4">
-            <p className="text-sm">You've reached the end of trending stories</p>
-          </div>
-        )}
-        {hasMore && !loadingMore && trendingArticles.length > 0 && (
-          <div className="text-center text-gray-400 dark:text-gray-600 py-4">
-            <p className="text-xs">Scroll down to load more...</p>
+            <p className="text-sm">End of trending stories</p>
           </div>
         )}
       </div>
