@@ -6,6 +6,10 @@ const NEWS_API_KEY = import.meta.env.VITE_NEWS_API_KEY;
 const GNEWS_API_KEY = import.meta.env.VITE_GNEWS_API_KEY;
 const MEDIASTACK_API_KEY = import.meta.env.VITE_MEDIASTACK_API_KEY;
 
+// Determine if we're in production (Vercel) or development
+const isProduction = import.meta.env.PROD;
+const API_BASE_URL = isProduction ? '/api' : 'http://localhost:3000/api';
+
 class NewsService {
   constructor() {
     this.api = axios.create({
@@ -20,156 +24,75 @@ class NewsService {
         name: "NewsAPI",
         enabled: !!NEWS_API_KEY && NEWS_API_KEY !== "",
         fetchHeadlines: async (category, country, page) => {
-          const baseUrl = "https://newsapi.org/v2";
-          const response = await this.api.get(`${baseUrl}/top-headlines`, {
+          const response = await this.api.get(`${API_BASE_URL}/news`, {
             params: {
+              endpoint: 'top-headlines',
               country: country || 'us',
-              category: category !== "general" ? category : undefined,
-              page: page,
-              pageSize: 30,
-              apiKey: NEWS_API_KEY
+              category: category,
+              page: page
             }
           });
           return response.data;
         },
         fetchSearch: async (query, page) => {
-          const baseUrl = "https://newsapi.org/v2";
-          const response = await this.api.get(`${baseUrl}/everything`, {
+          const response = await this.api.get(`${API_BASE_URL}/news`, {
             params: {
+              endpoint: 'everything',
               q: query,
-              apiKey: NEWS_API_KEY,
-              page: page,
-              pageSize: 30,
-              sortBy: "publishedAt",
-              language: "en"
+              page: page
             }
           });
-          return {
-            articles: response.data.articles,
-            totalResults: response.data.totalResults,
-            status: "ok"
-          };
+          return response.data;
         }
       },
       {
         name: "GNews",
         enabled: !!GNEWS_API_KEY && GNEWS_API_KEY !== "",
         fetchHeadlines: async (category, country, page) => {
-          const response = await this.api.get("https://gnews.io/api/v4/top-headlines", {
+          const response = await this.api.get(`${API_BASE_URL}/news`, {
             params: {
-              token: GNEWS_API_KEY,
-              country: country,
-              category: category !== "general" ? category : undefined,
-              max: 30,
-              page: page,
-              lang: "en"
+              endpoint: 'gnews',
+              country: country || 'us',
+              category: category,
+              page: page
             }
           });
-          return {
-            articles: (response.data.articles || []).map(article => ({
-              source: { id: null, name: article.source?.name || "GNews" },
-              author: article.author,
-              title: article.title,
-              description: article.description,
-              url: article.url,
-              urlToImage: article.image,
-              publishedAt: article.publishedAt,
-              content: article.content
-            })),
-            totalResults: response.data.totalArticles || 0,
-            status: "ok"
-          };
+          return response.data;
         },
         fetchSearch: async (query, page) => {
-          const response = await this.api.get("https://gnews.io/api/v4/search", {
+          const response = await this.api.get(`${API_BASE_URL}/news`, {
             params: {
-              token: GNEWS_API_KEY,
+              endpoint: 'gnews-search',
               q: query,
-              lang: "en",
-              max: 30,
-              page: page,
-              sortby: "publishedAt"
+              page: page
             }
           });
-          return {
-            articles: (response.data.articles || []).map(article => ({
-              source: { id: null, name: article.source?.name || "GNews" },
-              author: article.author,
-              title: article.title,
-              description: article.description,
-              url: article.url,
-              urlToImage: article.image,
-              publishedAt: article.publishedAt,
-              content: article.content
-            })),
-            totalResults: response.data.totalArticles || 0,
-            status: "ok"
-          };
+          return response.data;
         }
       },
       {
         name: "MediaStack",
         enabled: !!MEDIASTACK_API_KEY && MEDIASTACK_API_KEY !== "",
         fetchHeadlines: async (category, country, page) => {
-          const categoryMap = {
-            general: "general",
-            technology: "technology",
-            business: "business",
-            entertainment: "entertainment",
-            sports: "sports",
-            science: "science",
-            health: "health"
-          };
-          const response = await this.api.get("http://api.mediastack.com/v1/news", {
+          const response = await this.api.get(`${API_BASE_URL}/news`, {
             params: {
-              access_key: MEDIASTACK_API_KEY,
-              countries: country,
-              categories: categoryMap[category] || "general",
-              languages: "en",
-              limit: 30,
-              offset: 30 * (page - 1)
+              endpoint: 'mediastack',
+              country: country || 'us',
+              category: category,
+              page: page
             }
           });
-          return {
-            articles: (response.data.data || []).map(article => ({
-              source: { id: null, name: article.source || "MediaStack" },
-              author: article.author,
-              title: article.title,
-              description: article.description,
-              url: article.url,
-              urlToImage: article.image,
-              publishedAt: article.published_at,
-              content: article.content
-            })),
-            totalResults: response.data.pagination?.total || 0,
-            status: "ok"
-          };
+          return response.data;
         },
         fetchSearch: async (query, page) => {
-          const response = await this.api.get("http://api.mediastack.com/v1/news", {
+          const response = await this.api.get(`${API_BASE_URL}/news`, {
             params: {
-              access_key: MEDIASTACK_API_KEY,
-              keywords: query,
-              languages: "en",
-              limit: 30,
-              offset: 30 * (page - 1),
-              sort: "published_desc"
+              endpoint: 'mediastack-search',
+              q: query,
+              page: page
             }
           });
-          return {
-            articles: (response.data.data || []).map(article => ({
-              source: { id: null, name: article.source || "MediaStack" },
-              author: article.author,
-              title: article.title,
-              description: article.description,
-              url: article.url,
-              urlToImage: article.image,
-              publishedAt: article.published_at,
-              content: article.content
-            })),
-            totalResults: response.data.pagination?.total || 0,
-            status: "ok"
-          };
+          return response.data;
         }
       }
     ];
@@ -265,7 +188,6 @@ class NewsService {
   }
 
   async fetchVideos(query = "news today", page = 1) {
-    // Search for news videos using NewsAPI
     try {
       const result = await this.searchNews(query + " video", page);
       return result.articles || [];

@@ -6,6 +6,7 @@
   "framework": "vite",
   "outputDirectory": "dist",
   "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/news" },
     { "source": "/(.*)", "destination": "/" }
   ],
   "headers": [

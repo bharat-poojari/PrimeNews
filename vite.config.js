@@ -8,12 +8,12 @@ export default defineConfig({
     port: 3000,
     open: true,
     proxy: {
-      "/api": {
-        target: "https://newsapi.org",
+      '/api': {
+        target: 'http://localhost:3000',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, "/v2"),
-      },
-    },
+        rewrite: (path) => path
+      }
+    }
   },
   build: {
     outDir: "dist",
