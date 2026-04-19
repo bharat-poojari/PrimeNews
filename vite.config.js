@@ -10,19 +10,12 @@ export default defineConfig({
   build: {
     outDir: "dist",
     sourcemap: false,
-    minify: "terser",
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-      },
-    },
+    minify: "esbuild", // Use esbuild instead of terser
     rollupOptions: {
       output: {
         manualChunks: {
           vendor: ["react", "react-dom", "react-router-dom"],
           ui: ["framer-motion", "react-icons"],
-          utils: ["axios", "date-fns", "zustand"],
         },
       },
     },
