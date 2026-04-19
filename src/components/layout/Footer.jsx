@@ -40,70 +40,69 @@ export const Footer = () => {
   return (
     <footer className="bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 mt-auto">
       <div className="container mx-auto px-4 py-8 lg:py-12">
-        {/* Top Section with Brand and Social */}
-        <div className="flex flex-col lg:flex-row justify-between items-center gap-6 mb-8 lg:mb-10 pb-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="text-center lg:text-left">
-            <h2 className="font-serif text-2xl lg:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-              Prime<span className="text-blue-600 bg-none">News</span>
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
-              Delivering trustworthy, insightful news coverage.
-            </p>
-          </div>
-          
-          <div className="flex space-x-3">
-            <a
-              href="https://twitter.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full text-gray-600 dark:text-gray-400 hover:text-blue-600 hover:border-blue-600 transition-all duration-200"
-              aria-label="Twitter"
-            >
-              <FaTwitter className="text-sm lg:text-base" />
-            </a>
-            <a
-              href="https://facebook.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full text-gray-600 dark:text-gray-400 hover:text-blue-600 hover:border-blue-600 transition-all duration-200"
-              aria-label="Facebook"
-            >
-              <FaFacebook className="text-sm lg:text-base" />
-            </a>
-            <a
-              href="https://instagram.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full text-gray-600 dark:text-gray-400 hover:text-blue-600 hover:border-blue-600 transition-all duration-200"
-              aria-label="Instagram"
-            >
-              <FaInstagram className="text-sm lg:text-base" />
-            </a>
-            <a
-              href="https://linkedin.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full text-gray-600 dark:text-gray-400 hover:text-blue-600 hover:border-blue-600 transition-all duration-200"
-              aria-label="LinkedIn"
-            >
-              <FaLinkedin className="text-sm lg:text-base" />
-            </a>
-          </div>
+        {/* Brand Section */}
+        <div className="text-center mb-8">
+          <h2 className="font-serif text-2xl lg:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2">
+            Prime<span className="text-blue-600 bg-none">News</span>
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 text-sm max-w-md mx-auto">
+            Delivering trustworthy, insightful news coverage since 2024.
+          </p>
         </div>
 
-        {/* Links Section - 3 columns on desktop */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 lg:mb-10">
+        {/* Social Icons */}
+        <div className="flex justify-center space-x-3 mb-8 lg:mb-10">
+          <a
+            href="https://twitter.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full text-gray-600 dark:text-gray-400 hover:text-blue-600 hover:border-blue-600 transition-all duration-200"
+            aria-label="Twitter"
+          >
+            <FaTwitter className="text-sm lg:text-base" />
+          </a>
+          <a
+            href="https://facebook.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full text-gray-600 dark:text-gray-400 hover:text-blue-600 hover:border-blue-600 transition-all duration-200"
+            aria-label="Facebook"
+          >
+            <FaFacebook className="text-sm lg:text-base" />
+          </a>
+          <a
+            href="https://instagram.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full text-gray-600 dark:text-gray-400 hover:text-blue-600 hover:border-blue-600 transition-all duration-200"
+            aria-label="Instagram"
+          >
+            <FaInstagram className="text-sm lg:text-base" />
+          </a>
+          <a
+            href="https://linkedin.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full text-gray-600 dark:text-gray-400 hover:text-blue-600 hover:border-blue-600 transition-all duration-200"
+            aria-label="LinkedIn"
+          >
+            <FaLinkedin className="text-sm lg:text-base" />
+          </a>
+        </div>
+
+        {/* Categories & Quick Links - Mobile: 2 columns, Desktop: side by side */}
+        <div className="grid grid-cols-2 lg:grid-cols-2 gap-6 lg:gap-12 max-w-4xl mx-auto mb-8 lg:mb-10">
           {/* Categories */}
           <div>
-            <h3 className="font-serif font-bold text-gray-900 dark:text-white mb-3 text-sm lg:text-base">
+            <h3 className="font-serif font-bold text-gray-900 dark:text-white mb-3 text-sm lg:text-base text-center lg:text-left">
               Categories
             </h3>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-2">
               {categories.map((category) => (
                 <button
                   key={category.path}
                   onClick={() => handleCategoryClick(category.path)}
-                  className="text-gray-600 dark:text-gray-400 hover:text-blue-600 text-xs lg:text-sm transition-colors text-left group flex items-center"
+                  className="text-gray-600 dark:text-gray-400 hover:text-blue-600 text-xs lg:text-sm transition-colors flex items-center justify-center lg:justify-start group w-full"
                 >
                   <FaArrowRight className="mr-1.5 text-[10px] opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all duration-200" />
                   {category.name}
@@ -114,7 +113,7 @@ export const Footer = () => {
 
           {/* Quick Links */}
           <div>
-            <h3 className="font-serif font-bold text-gray-900 dark:text-white mb-3 text-sm lg:text-base">
+            <h3 className="font-serif font-bold text-gray-900 dark:text-white mb-3 text-sm lg:text-base text-center lg:text-left">
               Quick Links
             </h3>
             <div className="space-y-2">
@@ -122,7 +121,7 @@ export const Footer = () => {
                 <Link
                   key={link.path}
                   to={link.path}
-                  className="block text-gray-600 dark:text-gray-400 hover:text-blue-600 text-xs lg:text-sm transition-colors"
+                  className="text-gray-600 dark:text-gray-400 hover:text-blue-600 text-xs lg:text-sm transition-colors flex items-center justify-center lg:justify-start w-full"
                   onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                 >
                   {link.name}
@@ -130,39 +129,13 @@ export const Footer = () => {
               ))}
             </div>
           </div>
-
-          {/* Contact Info */}
-          <div>
-            <h3 className="font-serif font-bold text-gray-900 dark:text-white mb-3 text-sm lg:text-base">
-              Contact Us
-            </h3>
-            <ul className="space-y-2">
-              <li className="flex items-center gap-2">
-                <FaMapMarkerAlt className="text-blue-600 flex-shrink-0 text-sm" />
-                <span className="text-gray-600 dark:text-gray-400 text-xs lg:text-sm">
-                  Sirsi, Karnataka 581401
-                </span>
-              </li>
-              <li className="flex items-center gap-2">
-                <FaPhone className="text-blue-600 flex-shrink-0 text-sm" />
-                <span className="text-gray-600 dark:text-gray-400 text-xs lg:text-sm">
-                  +91 98765 43210
-                </span>
-              </li>
-              <li className="flex items-center gap-2">
-                <FaEnvelope className="text-blue-600 flex-shrink-0 text-sm" />
-                <span className="text-gray-600 dark:text-gray-400 text-xs lg:text-sm">
-                  contact@primenews.com
-                </span>
-              </li>
-            </ul>
-          </div>
         </div>
 
-        {/* Newsletter Section */}
-        <div className="mb-8 lg:mb-10 pt-6 border-t border-gray-200 dark:border-gray-700">
-          <div className="max-w-md mx-auto text-center">
-            <h3 className="font-serif font-bold text-gray-900 dark:text-white mb-2 text-sm lg:text-base">
+        {/* Newsletter & Contact - Mobile: stacked, Desktop: side by side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12 max-w-4xl mx-auto">
+          {/* Newsletter */}
+          <div className="text-center lg:text-left">
+            <h3 className="font-serif font-bold text-gray-900 dark:text-white mb-3 text-sm lg:text-base">
               Newsletter
             </h3>
             <p className="text-gray-600 dark:text-gray-400 text-xs lg:text-sm mb-3">
@@ -173,7 +146,10 @@ export const Footer = () => {
                 e.preventDefault();
                 const email = e.target.email.value;
                 if (email && email.includes('@')) {
+                  alert('Subscribed successfully!');
                   e.target.reset();
+                } else {
+                  alert('Please enter a valid email');
                 }
               }}
               className="flex flex-col sm:flex-row gap-2"
@@ -193,10 +169,37 @@ export const Footer = () => {
               </button>
             </form>
           </div>
+
+          {/* Contact Us */}
+          <div className="text-center lg:text-left">
+            <h3 className="font-serif font-bold text-gray-900 dark:text-white mb-3 text-sm lg:text-base">
+              Contact Us
+            </h3>
+            <ul className="space-y-2">
+              <li className="flex items-center justify-center lg:justify-start gap-2">
+                <FaMapMarkerAlt className="text-blue-600 flex-shrink-0 text-sm" />
+                <span className="text-gray-600 dark:text-gray-400 text-xs lg:text-sm">
+                  Sirsi, Karnataka 581401
+                </span>
+              </li>
+              <li className="flex items-center justify-center lg:justify-start gap-2">
+                <FaPhone className="text-blue-600 flex-shrink-0 text-sm" />
+                <span className="text-gray-600 dark:text-gray-400 text-xs lg:text-sm">
+                  +91 98765 43210
+                </span>
+              </li>
+              <li className="flex items-center justify-center lg:justify-start gap-2">
+                <FaEnvelope className="text-blue-600 flex-shrink-0 text-sm" />
+                <span className="text-gray-600 dark:text-gray-400 text-xs lg:text-sm">
+                  contact@primenews.com
+                </span>
+              </li>
+            </ul>
+          </div>
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-5 lg:pt-6 border-t border-gray-200 dark:border-gray-700">
+        <div className="mt-8 lg:mt-10 pt-5 lg:pt-6 border-t border-gray-200 dark:border-gray-700">
           <div className="text-center">
             <p className="text-[11px] lg:text-xs text-gray-500 dark:text-gray-400 mb-2">
               © {currentYear} PrimeNews. All rights reserved.

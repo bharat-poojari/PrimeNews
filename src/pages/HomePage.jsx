@@ -10,16 +10,19 @@ import { LoaderSkeleton } from '../components/common/LoaderSkeleton';
 import { newsService } from '../services/api';
 import { Link } from 'react-router-dom';
 import { useNewsStore } from '../store/newsStore';
+import toast from 'react-hot-toast';
 
 export const HomePage = () => {
+  const [apiError, setApiError] = useState(null);
   const [featuredNews, setFeaturedNews] = useState([]);
   const [filteredNews, setFilteredNews] = useState([]);
   const [allCategoryNews, setAllCategoryNews] = useState({});
-  const [initialLoading, setInitialLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [showAllCategories, setShowAllCategories] = useState(true);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [totalResults, setTotalResults] = useState(0);
   const observerRef = useRef(null);
   const loadingRef = useRef(null);
   const { currentCategory, setCurrentCategory } = useNewsStore();
@@ -43,6 +46,7 @@ export const HomePage = () => {
       
       if (isLoadMore) {
         setFeaturedNews(prev => {
+          // Remove duplicates based on URL
           const existingUrls = new Set(prev.map(a => a.url));
           const newArticles = articles.filter(a => !existingUrls.has(a.url));
           return [...prev, ...newArticles];
@@ -51,10 +55,14 @@ export const HomePage = () => {
         setFeaturedNews(articles);
       }
       
-      setHasMore(articles.length === 30);
+      setTotalResults(headlines.totalResults || 0);
+      const hasMoreData = articles.length === 30 && (pageNum * 30) < (headlines.totalResults || 0);
+      setHasMore(hasMoreData);
+      
       return articles;
     } catch (error) {
       console.error('Failed to fetch featured news:', error);
+      setApiError('Failed to fetch news data. Please check your API configuration.');
       return [];
     }
   }, [currentCategory]);
@@ -75,37 +83,48 @@ export const HomePage = () => {
   const handleCategorySelect = useCallback(async (categoryId) => {
     setCurrentCategory(categoryId);
     setShowAllCategories(false);
-    setFeaturedNews([]);
-    setFilteredNews([]);
+    setLoading(true);
     setPage(1);
     setHasMore(true);
+    setFeaturedNews([]);
     
     try {
       const headlines = await newsService.fetchTopHeadlines(categoryId, 'us', 1);
       setFeaturedNews(headlines.articles || []);
-      setHasMore(headlines.articles?.length === 30);
+      setTotalResults(headlines.totalResults || 0);
+      setHasMore(headlines.articles?.length === 30 && 30 < (headlines.totalResults || 0));
       
       const categoryArticles = await fetchCategoryNews(categoryId);
       setFilteredNews(categoryArticles);
+      
+      toast.success(`Showing ${categoryId} news`);
     } catch (error) {
       console.error('Failed to fetch category news:', error);
+      toast.error('Failed to load category news');
+    } finally {
+      setLoading(false);
     }
   }, [setCurrentCategory, fetchCategoryNews]);
 
   const handleShowAllCategories = useCallback(async () => {
     setCurrentCategory('general');
     setShowAllCategories(true);
-    setFeaturedNews([]);
+    setLoading(true);
     setPage(1);
     setHasMore(true);
+    setFeaturedNews([]);
     
     try {
       const headlines = await newsService.fetchTopHeadlines('general', 'us', 1);
       setFeaturedNews(headlines.articles || []);
-      setHasMore(headlines.articles?.length === 30);
+      setTotalResults(headlines.totalResults || 0);
+      setHasMore(headlines.articles?.length === 30 && 30 < (headlines.totalResults || 0));
       await fetchAllCategoriesNews();
     } catch (error) {
       console.error('Failed to fetch all categories:', error);
+      toast.error('Failed to load all categories');
+    } finally {
+      setLoading(false);
     }
   }, [setCurrentCategory, fetchAllCategoriesNews]);
 
@@ -119,23 +138,25 @@ export const HomePage = () => {
       setPage(nextPage);
     } catch (error) {
       console.error('Failed to load more:', error);
+      toast.error('Failed to load more articles');
     } finally {
       setLoadingMore(false);
     }
   }, [loadingMore, hasMore, page, currentCategory, fetchFeaturedNews]);
 
+  // Setup intersection observer for infinite scroll
   useEffect(() => {
-    if (loadingMore || !hasMore || initialLoading || showAllCategories) return;
+    if (loadingMore || !hasMore) return;
     
     const options = {
       root: null,
-      rootMargin: '200px',
+      rootMargin: '100px',
       threshold: 0.1
     };
     
     observerRef.current = new IntersectionObserver((entries) => {
       const firstEntry = entries[0];
-      if (firstEntry.isIntersecting && !loadingMore && hasMore && !initialLoading) {
+      if (firstEntry.isIntersecting && !loadingMore && hasMore && !loading) {
         loadMoreFeatured();
       }
     }, options);
@@ -150,22 +171,26 @@ export const HomePage = () => {
         observerRef.current.disconnect();
       }
     };
-  }, [loadingMore, hasMore, initialLoading, loadMoreFeatured, showAllCategories]);
+  }, [loadingMore, hasMore, loading, loadMoreFeatured]);
 
   useEffect(() => {
     const loadInitialData = async () => {
-      setInitialLoading(true);
+      setLoading(true);
+      setApiError(null);
       try {
         const headlines = await newsService.fetchTopHeadlines('general', 'us', 1);
         setFeaturedNews(headlines.articles || []);
-        setHasMore(headlines.articles?.length === 30);
+        setTotalResults(headlines.totalResults || 0);
+        setHasMore(headlines.articles?.length === 30 && 30 < (headlines.totalResults || 0));
         await fetchAllCategoriesNews();
         setShowAllCategories(true);
         setCurrentCategory('general');
       } catch (error) {
         console.error('Failed to load initial data:', error);
+        setApiError('Failed to fetch news data. Please check your API configuration.');
+        toast.error('Failed to load news');
       } finally {
-        setInitialLoading(false);
+        setLoading(false);
       }
     };
 
@@ -185,8 +210,20 @@ export const HomePage = () => {
     return names[currentCategory] || 'General';
   };
 
-  if (initialLoading) {
+  if (loading && featuredNews.length === 0) {
     return <LoaderSkeleton type="home" />;
+  }
+
+  if (apiError) {
+    return (
+      <div className="container mx-auto px-4 py-8 pt-24">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-2xl mx-auto">
+          <h3 className="text-lg font-semibold text-red-900">API Error</h3>
+          <p className="text-red-700 mt-2">{apiError}</p>
+          <p className="text-red-600 text-sm mt-2">Please add valid API keys to your .env file</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -194,6 +231,7 @@ export const HomePage = () => {
       <BreakingTicker />
       
       <main className="container mx-auto px-4 py-6 lg:py-8">
+        {/* News Categories Section */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -222,6 +260,7 @@ export const HomePage = () => {
           />
         </motion.section>
 
+        {/* Featured Section */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -241,7 +280,7 @@ export const HomePage = () => {
                 className="group flex items-center space-x-1 text-blue-600 hover:text-blue-700 transition-colors text-sm font-medium"
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               >
-                <span>View All</span>
+                <span>View All {getCategoryDisplayName()} News</span>
                 <FaArrowRight className="group-hover:translate-x-1 transition-transform text-xs" />
               </Link>
             )}
@@ -249,6 +288,7 @@ export const HomePage = () => {
           <HeroSection articles={featuredNews} />
         </motion.section>
 
+        {/* Filtered News Section */}
         {!showAllCategories && filteredNews.length > 0 && (
           <motion.section
             initial={{ opacity: 0, y: 20 }}
@@ -270,6 +310,7 @@ export const HomePage = () => {
           </motion.section>
         )}
 
+        {/* All Categories Section */}
         {showAllCategories && Object.entries(allCategoryNews).map(([category, articles], idx) => (
           articles.length > 0 && (
             <motion.section
@@ -306,6 +347,7 @@ export const HomePage = () => {
           )
         ))}
 
+        {/* Infinite Scroll Loader */}
         {!showAllCategories && (
           <div ref={loadingRef} className="text-center py-8">
             {loadingMore && (
@@ -314,9 +356,15 @@ export const HomePage = () => {
                 <span className="text-gray-600 dark:text-gray-400 text-sm">Loading more articles...</span>
               </div>
             )}
+            {!hasMore && featuredNews.length > 0 && (
+              <div className="text-center text-gray-500 dark:text-gray-400 py-4">
+                <p className="text-sm">You've reached the end of the articles</p>
+              </div>
+            )}
           </div>
         )}
 
+        {/* Stay Informed Section */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -328,21 +376,23 @@ export const HomePage = () => {
               <div className="inline-block p-3 bg-blue-500/20 rounded-full mb-4">
                 <FaNewspaper className="text-3xl lg:text-4xl text-blue-500" />
               </div>
+              
               <h2 className="font-serif text-2xl lg:text-4xl font-bold text-white mb-2">
                 Stay Informed
               </h2>
               <p className="text-gray-300 text-sm lg:text-base mb-6">
                 Get the latest news delivered straight to your inbox.
               </p>
+              
               <form 
                 onSubmit={(e) => {
                   e.preventDefault();
                   const email = e.target.email.value;
-                  if (email && email.includes('@')) {
-                    alert('Subscribed successfully!');
+                  if (email) {
+                    toast.success('Subscribed successfully!');
                     e.target.reset();
                   } else {
-                    alert('Please enter a valid email');
+                    toast.error('Please enter a valid email');
                   }
                 }}
                 className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
@@ -361,6 +411,7 @@ export const HomePage = () => {
                   Subscribe
                 </button>
               </form>
+              
               <p className="text-gray-400 text-xs mt-3">
                 We respect your privacy. Unsubscribe at any time.
               </p>

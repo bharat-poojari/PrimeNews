@@ -1,12 +1,12 @@
 // PrimeNews/src/services/api.js
 import axios from "axios";
 
-const GNEWS_API_KEY = import.meta.env.VITE_GNEWS_API_KEY;
+const NEWS_API_KEY = import.meta.env.VITE_NEWS_API_KEY;
 
 class NewsService {
   constructor() {
     this.api = axios.create({
-      timeout: 15000,
+      timeout: 30000,
       headers: {
         'Content-Type': 'application/json',
       }
@@ -15,7 +15,8 @@ class NewsService {
 
   async fetchTopHeadlines(category = "general", country = "us", page = 1) {
     try {
-      let url = `https://gnews.io/api/v4/top-headlines?token=${GNEWS_API_KEY}&country=${country}&max=30&page=${page}&lang=en`;
+      // Use NewsAPI directly
+      let url = `https://newsapi.org/v2/top-headlines?country=${country}&pageSize=30&page=${page}&apiKey=${NEWS_API_KEY}`;
       
       if (category && category !== 'general') {
         url += `&category=${category}`;
@@ -24,21 +25,10 @@ class NewsService {
       const response = await this.api.get(url);
       const data = response.data;
       
-      if (data.articles) {
-        const articles = data.articles.map(article => ({
-          source: { id: null, name: article.source?.name || 'GNews' },
-          author: article.author,
-          title: article.title,
-          description: article.description,
-          url: article.url,
-          urlToImage: article.image,
-          publishedAt: article.publishedAt,
-          content: article.content
-        }));
-        
+      if (data.status === 'ok') {
         return {
-          articles: articles,
-          totalResults: data.totalArticles || 0
+          articles: data.articles || [],
+          totalResults: data.totalResults || 0
         };
       }
       
@@ -55,25 +45,14 @@ class NewsService {
     }
 
     try {
-      const url = `https://gnews.io/api/v4/search?token=${GNEWS_API_KEY}&q=${encodeURIComponent(query)}&max=30&page=${page}&lang=en&sortby=publishedAt`;
+      const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&pageSize=30&page=${page}&sortBy=publishedAt&language=en&apiKey=${NEWS_API_KEY}`;
       const response = await this.api.get(url);
       const data = response.data;
       
-      if (data.articles) {
-        const articles = data.articles.map(article => ({
-          source: { id: null, name: article.source?.name || 'GNews' },
-          author: article.author,
-          title: article.title,
-          description: article.description,
-          url: article.url,
-          urlToImage: article.image,
-          publishedAt: article.publishedAt,
-          content: article.content
-        }));
-        
+      if (data.status === 'ok') {
         return {
-          articles: articles,
-          totalResults: data.totalArticles || 0
+          articles: data.articles || [],
+          totalResults: data.totalResults || 0
         };
       }
       
@@ -103,6 +82,16 @@ class NewsService {
       return uniqueArticles;
     } catch (error) {
       console.error("Failed to fetch trending:", error);
+      return [];
+    }
+  }
+
+  async fetchVideos(query = "news", page = 1) {
+    try {
+      const result = await this.searchNews(query, page);
+      return result.articles || [];
+    } catch (error) {
+      console.error("Failed to fetch videos:", error);
       return [];
     }
   }
