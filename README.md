@@ -2,7 +2,7 @@
 
 <div align="center">
   
-  ![PrimeNews Logo]<img src="https://raw.githubusercontent.com/bharat-poojari/PrimeNews/main/logo.png" width="192" height="192" alt="PrimeNews Logo">
+  <img src="https://raw.githubusercontent.com/bharat-poojari/PrimeNews/main/public/logo.png" width="192" height="192" alt="PrimeNews Logo">
 
   ### 🌟 Live Demo: [the-prime-news.vercel.app](https://the-prime-news.vercel.app)
 
