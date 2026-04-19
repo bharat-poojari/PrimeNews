@@ -1,16 +1,17 @@
 // PrimeNews/src/pages/SearchPage.jsx
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { newsService } from '../services/api';
 import { NewsCard } from '../components/news/NewsCard';
-import { SearchBar } from '../components/common/SearchBar';
 import { LoaderSkeleton } from '../components/common/LoaderSkeleton';
-import { useDebounce } from '../hooks/useDebounce';
+import { FaSearch, FaTimes } from 'react-icons/fa';
 
 export const SearchPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const query = searchParams.get('q') || '';
   
+  const [searchInput, setSearchInput] = useState(query);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -18,8 +19,6 @@ export const SearchPage = () => {
   const [hasMore, setHasMore] = useState(true);
   const observerRef = useRef(null);
   const loadingRef = useRef(null);
-
-  const debouncedQuery = useDebounce(query, 500);
 
   const performSearch = useCallback(async (searchQuery, pageNum, isLoadMore = false) => {
     if (!searchQuery || searchQuery.trim() === '') {
@@ -42,9 +41,7 @@ export const SearchPage = () => {
         setResults(newArticles);
       }
       
-      const hasMorePages = newArticles.length === 30;
-      setHasMore(hasMorePages);
-      
+      setHasMore(newArticles.length === 30);
       return newArticles;
     } catch (error) {
       console.error('Search failed:', error);
@@ -53,7 +50,7 @@ export const SearchPage = () => {
   }, []);
 
   useEffect(() => {
-    if (loadingMore || !hasMore || loading || !debouncedQuery) return;
+    if (loadingMore || !hasMore || loading || !query) return;
     
     const options = {
       root: null,
@@ -63,11 +60,11 @@ export const SearchPage = () => {
     
     observerRef.current = new IntersectionObserver((entries) => {
       const firstEntry = entries[0];
-      if (firstEntry.isIntersecting && !loadingMore && hasMore && !loading && debouncedQuery) {
+      if (firstEntry.isIntersecting && !loadingMore && hasMore && !loading && query) {
         setLoadingMore(true);
         const nextPage = page + 1;
         setPage(nextPage);
-        performSearch(debouncedQuery, nextPage, true).finally(() => {
+        performSearch(query, nextPage, true).finally(() => {
           setLoadingMore(false);
         });
       }
@@ -83,28 +80,32 @@ export const SearchPage = () => {
         observerRef.current.disconnect();
       }
     };
-  }, [loadingMore, hasMore, loading, page, performSearch, debouncedQuery]);
+  }, [loadingMore, hasMore, loading, page, performSearch, query]);
 
   useEffect(() => {
-    if (debouncedQuery && debouncedQuery.trim()) {
+    if (query && query.trim()) {
       setPage(1);
       setResults([]);
       setHasMore(true);
       setLoading(true);
-      performSearch(debouncedQuery, 1, false).finally(() => setLoading(false));
+      performSearch(query, 1, false).finally(() => setLoading(false));
     } else {
       setResults([]);
       setHasMore(false);
     }
-  }, [debouncedQuery, performSearch]);
+  }, [query, performSearch]);
 
-  const handleSearch = (searchQuery) => {
-    if (searchQuery && searchQuery.trim()) {
-      setSearchParams({ q: searchQuery });
-      setPage(1);
-      setResults([]);
-      setHasMore(true);
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchInput.trim()) {
+      setSearchParams({ q: searchInput.trim() });
     }
+  };
+
+  const handleClear = () => {
+    setSearchInput('');
+    setSearchParams({});
+    setResults([]);
   };
 
   return (
@@ -112,14 +113,36 @@ export const SearchPage = () => {
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-4 dark:text-white">Search News</h1>
         
-        <div className="mb-6">
-          <SearchBar 
-            initialValue={query}
-            onSearch={handleSearch}
-            autoFocus={true}
+        <form onSubmit={handleSearch} className="relative w-full max-w-2xl mx-auto">
+          <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+            <FaSearch className="text-gray-400 dark:text-gray-500 text-sm lg:text-base" />
+          </div>
+          
+          <input
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Search for news..."
+            className="w-full px-10 py-2.5 lg:py-3 text-sm lg:text-base bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
           />
-        </div>
+          
+          {searchInput && (
+            <button
+              type="button"
+              onClick={handleClear}
+              className="absolute inset-y-0 right-14 flex items-center pr-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            >
+              <FaTimes className="text-sm lg:text-base" />
+            </button>
+          )}
+          
+          <button
+            type="submit"
+            className="absolute inset-y-0 right-0 px-4 lg:px-5 bg-blue-600 text-white text-sm lg:text-base font-medium rounded-r-lg hover:bg-blue-700 transition-colors"
+          >
+            Search
+          </button>
+        </form>
       </div>
 
       {loading && results.length === 0 ? (
@@ -141,7 +164,7 @@ export const SearchPage = () => {
             )}
           </div>
         </>
-      ) : null}
+      ) : query && !loading ? null : null}
     </div>
   );
 };

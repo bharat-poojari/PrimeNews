@@ -11,14 +11,7 @@ export const HeroSection = ({ articles }) => {
   const { addBookmark, removeBookmark, isBookmarked } = useBookmarkStore();
   
   if (!articles || articles.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <div className="inline-flex items-center space-x-3">
-          <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-gray-600 dark:text-gray-400">Loading news...</span>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   const mainArticle = articles[0];

@@ -1,10 +1,11 @@
-// Update PrimeNews/src/components/layout/Navbar.jsx - Add the compact search
+// PrimeNews/src/components/layout/Navbar.jsx
 import { useState, useEffect, useRef } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FaBars, 
   FaTimes, 
+  FaSearch, 
   FaMoon, 
   FaSun,
   FaBookmark,
@@ -12,13 +13,13 @@ import {
   FaVideo,
   FaHome
 } from 'react-icons/fa';
-import { SearchBarCompact } from '../common/SearchBarCompact';
 import { useThemeStore } from '../../store/themeStore';
 
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { isDark, toggleTheme } = useThemeStore();
+  const navigate = useNavigate();
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -55,6 +56,10 @@ export const Navbar = () => {
     { path: '/bookmarks', label: 'Bookmarks', icon: FaBookmark },
   ];
 
+  const handleSearchClick = () => {
+    navigate('/search');
+  };
+
   return (
     <>
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -90,8 +95,14 @@ export const Navbar = () => {
             </div>
 
             <div className="flex items-center space-x-2">
-              <SearchBarCompact />
-              
+              <button
+                onClick={handleSearchClick}
+                className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200"
+                aria-label="Search"
+              >
+                <FaSearch className="text-base" />
+              </button>
+
               <button
                 onClick={toggleTheme}
                 className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200"

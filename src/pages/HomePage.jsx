@@ -15,7 +15,7 @@ export const HomePage = () => {
   const [featuredNews, setFeaturedNews] = useState([]);
   const [filteredNews, setFilteredNews] = useState([]);
   const [allCategoryNews, setAllCategoryNews] = useState({});
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [showAllCategories, setShowAllCategories] = useState(true);
   const [page, setPage] = useState(1);
@@ -75,10 +75,10 @@ export const HomePage = () => {
   const handleCategorySelect = useCallback(async (categoryId) => {
     setCurrentCategory(categoryId);
     setShowAllCategories(false);
-    setLoading(true);
+    setFeaturedNews([]);
+    setFilteredNews([]);
     setPage(1);
     setHasMore(true);
-    setFeaturedNews([]);
     
     try {
       const headlines = await newsService.fetchTopHeadlines(categoryId, 'us', 1);
@@ -89,18 +89,15 @@ export const HomePage = () => {
       setFilteredNews(categoryArticles);
     } catch (error) {
       console.error('Failed to fetch category news:', error);
-    } finally {
-      setLoading(false);
     }
   }, [setCurrentCategory, fetchCategoryNews]);
 
   const handleShowAllCategories = useCallback(async () => {
     setCurrentCategory('general');
     setShowAllCategories(true);
-    setLoading(true);
+    setFeaturedNews([]);
     setPage(1);
     setHasMore(true);
-    setFeaturedNews([]);
     
     try {
       const headlines = await newsService.fetchTopHeadlines('general', 'us', 1);
@@ -109,8 +106,6 @@ export const HomePage = () => {
       await fetchAllCategoriesNews();
     } catch (error) {
       console.error('Failed to fetch all categories:', error);
-    } finally {
-      setLoading(false);
     }
   }, [setCurrentCategory, fetchAllCategoriesNews]);
 
@@ -129,9 +124,8 @@ export const HomePage = () => {
     }
   }, [loadingMore, hasMore, page, currentCategory, fetchFeaturedNews]);
 
-  // Setup intersection observer for infinite scroll
   useEffect(() => {
-    if (loadingMore || !hasMore || loading || showAllCategories) return;
+    if (loadingMore || !hasMore || initialLoading || showAllCategories) return;
     
     const options = {
       root: null,
@@ -141,7 +135,7 @@ export const HomePage = () => {
     
     observerRef.current = new IntersectionObserver((entries) => {
       const firstEntry = entries[0];
-      if (firstEntry.isIntersecting && !loadingMore && hasMore && !loading) {
+      if (firstEntry.isIntersecting && !loadingMore && hasMore && !initialLoading) {
         loadMoreFeatured();
       }
     }, options);
@@ -156,11 +150,11 @@ export const HomePage = () => {
         observerRef.current.disconnect();
       }
     };
-  }, [loadingMore, hasMore, loading, loadMoreFeatured, showAllCategories]);
+  }, [loadingMore, hasMore, initialLoading, loadMoreFeatured, showAllCategories]);
 
   useEffect(() => {
     const loadInitialData = async () => {
-      setLoading(true);
+      setInitialLoading(true);
       try {
         const headlines = await newsService.fetchTopHeadlines('general', 'us', 1);
         setFeaturedNews(headlines.articles || []);
@@ -171,7 +165,7 @@ export const HomePage = () => {
       } catch (error) {
         console.error('Failed to load initial data:', error);
       } finally {
-        setLoading(false);
+        setInitialLoading(false);
       }
     };
 
@@ -191,7 +185,7 @@ export const HomePage = () => {
     return names[currentCategory] || 'General';
   };
 
-  if (loading && featuredNews.length === 0) {
+  if (initialLoading) {
     return <LoaderSkeleton type="home" />;
   }
 
@@ -200,7 +194,6 @@ export const HomePage = () => {
       <BreakingTicker />
       
       <main className="container mx-auto px-4 py-6 lg:py-8">
-        {/* News Categories Section */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -229,7 +222,6 @@ export const HomePage = () => {
           />
         </motion.section>
 
-        {/* Featured Section */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -249,7 +241,7 @@ export const HomePage = () => {
                 className="group flex items-center space-x-1 text-blue-600 hover:text-blue-700 transition-colors text-sm font-medium"
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               >
-                <span>View All {getCategoryDisplayName()} News</span>
+                <span>View All</span>
                 <FaArrowRight className="group-hover:translate-x-1 transition-transform text-xs" />
               </Link>
             )}
@@ -257,7 +249,6 @@ export const HomePage = () => {
           <HeroSection articles={featuredNews} />
         </motion.section>
 
-        {/* Filtered News Section */}
         {!showAllCategories && filteredNews.length > 0 && (
           <motion.section
             initial={{ opacity: 0, y: 20 }}
@@ -279,7 +270,6 @@ export const HomePage = () => {
           </motion.section>
         )}
 
-        {/* All Categories Section */}
         {showAllCategories && Object.entries(allCategoryNews).map(([category, articles], idx) => (
           articles.length > 0 && (
             <motion.section
@@ -316,7 +306,6 @@ export const HomePage = () => {
           )
         ))}
 
-        {/* Infinite Scroll Loader */}
         {!showAllCategories && (
           <div ref={loadingRef} className="text-center py-8">
             {loadingMore && (
@@ -328,7 +317,6 @@ export const HomePage = () => {
           </div>
         )}
 
-        {/* Stay Informed Section */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -340,14 +328,12 @@ export const HomePage = () => {
               <div className="inline-block p-3 bg-blue-500/20 rounded-full mb-4">
                 <FaNewspaper className="text-3xl lg:text-4xl text-blue-500" />
               </div>
-              
               <h2 className="font-serif text-2xl lg:text-4xl font-bold text-white mb-2">
                 Stay Informed
               </h2>
               <p className="text-gray-300 text-sm lg:text-base mb-6">
                 Get the latest news delivered straight to your inbox.
               </p>
-              
               <form 
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -375,7 +361,6 @@ export const HomePage = () => {
                   Subscribe
                 </button>
               </form>
-              
               <p className="text-gray-400 text-xs mt-3">
                 We respect your privacy. Unsubscribe at any time.
               </p>

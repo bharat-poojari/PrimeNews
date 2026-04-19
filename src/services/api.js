@@ -24,7 +24,7 @@ class NewsService {
       const response = await this.api.get(url);
       const data = response.data;
       
-      if (data.articles) {
+      if (data.articles && data.articles.length > 0) {
         const articles = data.articles.map(article => ({
           source: { id: null, name: article.source?.name || 'GNews' },
           author: article.author,
@@ -59,7 +59,7 @@ class NewsService {
       const response = await this.api.get(url);
       const data = response.data;
       
-      if (data.articles) {
+      if (data.articles && data.articles.length > 0) {
         const articles = data.articles.map(article => ({
           source: { id: null, name: article.source?.name || 'GNews' },
           author: article.author,
@@ -103,16 +103,6 @@ class NewsService {
       return uniqueArticles;
     } catch (error) {
       console.error("Failed to fetch trending:", error);
-      return [];
-    }
-  }
-
-  async fetchVideos(query = "news", page = 1) {
-    try {
-      const result = await this.searchNews(query, page);
-      return result.articles || [];
-    } catch (error) {
-      console.error("Failed to fetch videos:", error);
       return [];
     }
   }
