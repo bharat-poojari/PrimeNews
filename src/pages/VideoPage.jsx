@@ -15,7 +15,8 @@ export const VideoPage = () => {
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const loaderRef = useRef(null);
+  const observerRef = useRef(null);
+  const loadingRef = useRef(null);
   const navigate = useNavigate();
 
   const categories = [
@@ -37,18 +38,15 @@ export const VideoPage = () => {
         query = searchQuery || category.query;
       }
       
-      // Add video-related terms to get video content
       const videoQuery = `${query} video`;
       const result = await newsService.searchNews(videoQuery, pageNum);
       const articles = result.articles || [];
       
-      // Filter for articles that might have video content
       const videoArticles = articles.filter(article => 
         article.title && 
         article.url && 
         (article.content?.toLowerCase().includes('video') || 
-         article.title?.toLowerCase().includes('video') ||
-         article.description?.toLowerCase().includes('watch'))
+         article.title?.toLowerCase().includes('video'))
       );
       
       if (isLoadMore) {
@@ -57,11 +55,43 @@ export const VideoPage = () => {
         setVideos(videoArticles);
       }
       
-      setHasMore(videoArticles.length === 30 && (result.totalResults > pageNum * 30));
+      setHasMore(videoArticles.length === 30);
     } catch (error) {
       console.error('Failed to fetch videos:', error);
     }
   }, [selectedCategory, searchQuery]);
+
+  // Setup intersection observer for infinite scroll
+  useEffect(() => {
+    if (loadingMore || !hasMore || loading) return;
+    
+    const options = {
+      root: null,
+      rootMargin: '200px',
+      threshold: 0.1
+    };
+    
+    observerRef.current = new IntersectionObserver((entries) => {
+      const firstEntry = entries[0];
+      if (firstEntry.isIntersecting && !loadingMore && hasMore && !loading) {
+        setLoadingMore(true);
+        const nextPage = page + 1;
+        setPage(nextPage);
+        loadVideos(nextPage, true).finally(() => setLoadingMore(false));
+      }
+    }, options);
+    
+    const currentLoadingRef = loadingRef.current;
+    if (currentLoadingRef) {
+      observerRef.current.observe(currentLoadingRef);
+    }
+    
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, [loadingMore, hasMore, loading, page, loadVideos]);
 
   useEffect(() => {
     setPage(1);
@@ -70,26 +100,6 @@ export const VideoPage = () => {
     setLoading(true);
     loadVideos(1, false).finally(() => setLoading(false));
   }, [selectedCategory, searchQuery, loadVideos]);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loadingMore && !loading) {
-          setLoadingMore(true);
-          const nextPage = page + 1;
-          setPage(nextPage);
-          loadVideos(nextPage, true).finally(() => setLoadingMore(false));
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (loaderRef.current) {
-      observer.observe(loaderRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, [hasMore, loadingMore, loading, page, loadVideos]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -163,12 +173,11 @@ export const VideoPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-6 pt-20 lg:pt-24">
-      <div className="flex items-center justify-center gap-2 mb-6">
+      <div className="flex items-center justify-center mb-6">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-red-500 to-red-600 rounded-full">
           <FaVideo className="text-white text-base" />
           <h1 className="text-white font-bold text-base">Video News</h1>
         </div>
-        <p className="text-gray-600 dark:text-gray-400 text-sm">{videos.length} videos loaded</p>
       </div>
 
       <form onSubmit={handleSearch} className="max-w-md mx-auto mb-6">
@@ -213,7 +222,6 @@ export const VideoPage = () => {
         <>
           {/* Featured Video */}
           <div className="mb-8">
-            <h2 className="text-lg font-bold mb-3 dark:text-white">Featured</h2>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div className="lg:col-span-2">
                 <motion.div
@@ -256,11 +264,6 @@ export const VideoPage = () => {
                   <p className="text-xs text-gray-600 dark:text-gray-400">
                     Source: {videos[0].source?.name || 'News Source'}
                   </p>
-                  {videos[0].publishedAt && (
-                    <p className="text-xs text-gray-600 dark:text-gray-400">
-                      Published: {new Date(videos[0].publishedAt).toLocaleDateString()}
-                    </p>
-                  )}
                 </div>
               </div>
             </div>
@@ -268,7 +271,6 @@ export const VideoPage = () => {
 
           {/* Video Grid */}
           <div>
-            <h2 className="text-lg font-bold mb-3 dark:text-white">More Videos</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {videos.slice(1).map((video, index) => (
                 <motion.div
@@ -311,22 +313,15 @@ export const VideoPage = () => {
               ))}
             </div>
             
-            {(loadingMore || hasMore) && (
-              <div ref={loaderRef} className="text-center py-6">
-                {loadingMore && (
-                  <div className="inline-flex items-center space-x-2">
-                    <div className="w-5 h-5 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-                    <span className="text-gray-600 dark:text-gray-400 text-sm">Loading more videos...</span>
-                  </div>
-                )}
-              </div>
-            )}
-            
-            {!hasMore && videos.length > 0 && (
-              <p className="text-center text-gray-500 dark:text-gray-400 mt-6 py-4 text-sm">
-                You've reached the end of videos
-              </p>
-            )}
+            {/* Infinite Scroll Loader */}
+            <div ref={loadingRef} className="text-center py-8">
+              {loadingMore && (
+                <div className="inline-flex items-center space-x-3">
+                  <div className="w-6 h-6 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-gray-600 dark:text-gray-400 text-sm">Loading more videos...</span>
+                </div>
+              )}
+            </div>
           </div>
         </>
       )}

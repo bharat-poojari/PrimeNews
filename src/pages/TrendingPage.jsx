@@ -83,7 +83,7 @@ export const TrendingPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-6 pt-20 lg:pt-24">
-      <div className="flex items-center justify-center gap-2 mb-6">
+      <div className="flex items-center justify-center mb-6">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-orange-500 to-red-500 rounded-full">
           <FaFire className="text-white text-base" />
           <h1 className="text-white font-bold text-base">Trending News</h1>
@@ -101,12 +101,7 @@ export const TrendingPage = () => {
         {loadingMore && (
           <div className="inline-flex items-center space-x-3">
             <div className="w-6 h-6 border-2 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
-            <span className="text-gray-600 dark:text-gray-400 text-sm">Loading more trending stories...</span>
-          </div>
-        )}
-        {!hasMore && !loadingMore && trendingArticles.length > 0 && (
-          <div className="text-center text-gray-500 dark:text-gray-400 py-4">
-            <p className="text-sm">End of trending stories</p>
+            <span className="text-gray-600 dark:text-gray-400 text-sm">Loading more stories...</span>
           </div>
         )}
       </div>

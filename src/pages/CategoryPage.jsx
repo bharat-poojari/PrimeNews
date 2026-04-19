@@ -140,11 +140,6 @@ export const CategoryPage = () => {
             <span className="text-gray-600 dark:text-gray-400 text-sm">Loading more articles...</span>
           </div>
         )}
-        {!hasMore && !loadingMore && articles.length > 0 && (
-          <div className="text-center text-gray-500 dark:text-gray-400 py-4">
-            <p className="text-sm">End of articles</p>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -7,7 +7,6 @@ import { SearchBar } from '../components/common/SearchBar';
 import { LoaderSkeleton } from '../components/common/LoaderSkeleton';
 import { useDebounce } from '../hooks/useDebounce';
 import { FaSearch, FaTimes } from 'react-icons/fa';
-import toast from 'react-hot-toast';
 
 export const SearchPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -18,7 +17,6 @@ export const SearchPage = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const [totalResults, setTotalResults] = useState(0);
   const [searchError, setSearchError] = useState(null);
   const observerRef = useRef(null);
   const loadingRef = useRef(null);
@@ -29,7 +27,6 @@ export const SearchPage = () => {
     if (!searchQuery || searchQuery.trim() === '') {
       setResults([]);
       setHasMore(false);
-      setTotalResults(0);
       return [];
     }
 
@@ -49,10 +46,8 @@ export const SearchPage = () => {
         setResults(newArticles);
       }
       
-      const total = data.totalResults || 0;
-      setTotalResults(total);
-      
       const resultsPerPage = 30;
+      const total = data.totalResults || 0;
       const maxPages = Math.ceil(Math.min(total, 100) / resultsPerPage);
       const currentPageLoaded = pageNum;
       const hasMorePages = currentPageLoaded < maxPages && newArticles.length === resultsPerPage;
@@ -112,7 +107,6 @@ export const SearchPage = () => {
     } else {
       setResults([]);
       setHasMore(false);
-      setTotalResults(0);
     }
   }, [debouncedQuery, performSearch]);
 
@@ -128,7 +122,6 @@ export const SearchPage = () => {
   const clearSearch = () => {
     setSearchParams({});
     setResults([]);
-    setTotalResults(0);
     setHasMore(false);
     setPage(1);
   };
@@ -183,11 +176,6 @@ export const SearchPage = () => {
                 <span className="text-gray-600 dark:text-gray-400 text-sm">Loading more results...</span>
               </div>
             )}
-            {!hasMore && !loadingMore && results.length > 0 && (
-              <div className="text-center text-gray-500 dark:text-gray-400 py-4">
-                <p className="text-sm">End of results</p>
-              </div>
-            )}
           </div>
         </>
       ) : query && !loading ? (
@@ -197,16 +185,8 @@ export const SearchPage = () => {
           </div>
           <h3 className="text-lg font-semibold mb-2 dark:text-white">No results found</h3>
           <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto text-sm">
-            We couldn't find any news matching "{query}". Try different keywords or browse our categories.
+            We couldn't find any news matching "{query}". Try different keywords.
           </p>
-          <div className="mt-6">
-            <button
-              onClick={() => window.location.href = '/'}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Browse Home
-            </button>
-          </div>
         </div>
       ) : null}
     </div>

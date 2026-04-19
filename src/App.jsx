@@ -1,4 +1,4 @@
-// PrimeNews/src/App.jsx
+// PrimeNews/src/App.jsx - Remove the Toaster component
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { Navbar } from './components/layout/Navbar';
@@ -13,7 +13,6 @@ import { BookmarksPage } from './pages/BookmarksPage';
 import { ContactPage } from './pages/ContactPage';
 import { useThemeStore } from './store/themeStore';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
-import { Toaster } from 'react-hot-toast';
 
 // Scroll to top component
 function ScrollToTop() {
@@ -30,7 +29,6 @@ function App() {
   const { isDark } = useThemeStore();
 
   useEffect(() => {
-    // Apply dark class to html element
     if (isDark) {
       document.documentElement.classList.add('dark');
     } else {
@@ -58,16 +56,6 @@ function App() {
           </main>
           <Footer />
         </Router>
-        <Toaster 
-          position="top-right"
-          toastOptions={{
-            duration: 3000,
-            style: {
-              background: isDark ? '#1f2937' : '#fff',
-              color: isDark ? '#fff' : '#1f2937',
-            },
-          }}
-        />
       </ErrorBoundary>
     </div>
   );
