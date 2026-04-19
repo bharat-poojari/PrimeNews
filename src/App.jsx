@@ -1,4 +1,3 @@
-// src/App.jsx
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
@@ -15,7 +14,6 @@ import { ContactPage } from './pages/ContactPage';
 import { useThemeStore } from './store/themeStore';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 
-// Scroll to top component
 function ScrollToTop() {
   const { pathname } = useLocation();
   

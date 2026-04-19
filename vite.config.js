@@ -10,7 +10,7 @@ export default defineConfig({
   build: {
     outDir: "dist",
     sourcemap: false,
-    minify: "esbuild", // Use esbuild instead of terser
+    minify: "esbuild",
     rollupOptions: {
       output: {
         manualChunks: {
