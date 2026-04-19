@@ -1,6 +1,13 @@
 // src/services/api.js
 import axios from "axios";
 
+const NEWS_API_KEY = import.meta.env.VITE_NEWS_API_KEY;
+const GNEWS_API_KEY = import.meta.env.VITE_GNEWS_API_KEY;
+const MEDIASTACK_API_KEY = import.meta.env.VITE_MEDIASTACK_API_KEY;
+
+// Check if running on Vercel
+const isVercel = typeof window !== 'undefined' && window.location?.hostname !== 'localhost';
+
 class NewsService {
   constructor() {
     this.api = axios.create({
@@ -9,23 +16,21 @@ class NewsService {
         "Content-Type": "application/json",
       },
     });
-    // Detect if we're on Vercel or local
-    this.isVercel = window.location.hostname !== 'localhost';
   }
 
   async fetchTopHeadlines(category = "general", country = "us", page = 1) {
     try {
-      // Use the serverless function on Vercel, direct API on local
       let url;
-      if (this.isVercel) {
-        url = `/api/news?endpoint=top-headlines&category=${category}&country=${country}&page=${page}`;
-      } else {
-        // Local development - use direct API calls
-        return this.fetchDirectFromAPI(category, country, page);
-      }
       
-      const response = await this.api.get(url);
-      return response.data;
+      if (isVercel) {
+        // Use serverless function on Vercel
+        url = `/api/news?endpoint=top-headlines&category=${category}&country=${country}&page=${page}`;
+        const response = await this.api.get(url);
+        return response.data;
+      } else {
+        // Direct API calls in development
+        return await this.fetchDirectFromAPI(category, country, page);
+      }
     } catch (error) {
       console.error("API error:", error.message);
       return { articles: [], totalResults: 0 };
@@ -33,11 +38,8 @@ class NewsService {
   }
 
   async fetchDirectFromAPI(category, country, page) {
-    const NEWS_API_KEY = import.meta.env.VITE_NEWS_API_KEY;
-    const GNEWS_API_KEY = import.meta.env.VITE_GNEWS_API_KEY;
-    
     // Try GNews first
-    if (GNEWS_API_KEY) {
+    if (GNEWS_API_KEY && GNEWS_API_KEY !== "062379a68af3aea550e5dd82fcf479b3") {
       try {
         let url = `https://gnews.io/api/v4/top-headlines?token=${GNEWS_API_KEY}&country=${country}&max=30&page=${page}&lang=en`;
         if (category && category !== "general") {
@@ -68,7 +70,7 @@ class NewsService {
     }
 
     // Try NewsAPI
-    if (NEWS_API_KEY) {
+    if (NEWS_API_KEY && NEWS_API_KEY !== "53c492dd61354d19acbbee61aaba9de7") {
       try {
         let url = `https://newsapi.org/v2/top-headlines?country=${country}&pageSize=30&page=${page}&apiKey=${NEWS_API_KEY}`;
         if (category && category !== "general") {
@@ -109,14 +111,14 @@ class NewsService {
 
     try {
       let url;
-      if (this.isVercel) {
-        url = `/api/news?endpoint=search&q=${encodeURIComponent(query)}&page=${page}`;
-      } else {
-        return this.searchDirectFromAPI(query, page);
-      }
       
-      const response = await this.api.get(url);
-      return response.data;
+      if (isVercel) {
+        url = `/api/news?endpoint=search&q=${encodeURIComponent(query)}&page=${page}`;
+        const response = await this.api.get(url);
+        return response.data;
+      } else {
+        return await this.searchDirectFromAPI(query, page);
+      }
     } catch (error) {
       console.error("Search error:", error.message);
       return { articles: [], totalResults: 0 };
@@ -124,10 +126,7 @@ class NewsService {
   }
 
   async searchDirectFromAPI(query, page) {
-    const NEWS_API_KEY = import.meta.env.VITE_NEWS_API_KEY;
-    const GNEWS_API_KEY = import.meta.env.VITE_GNEWS_API_KEY;
-    
-    if (GNEWS_API_KEY) {
+    if (GNEWS_API_KEY && GNEWS_API_KEY !== "062379a68af3aea550e5dd82fcf479b3") {
       try {
         const url = `https://gnews.io/api/v4/search?token=${GNEWS_API_KEY}&q=${encodeURIComponent(query)}&max=30&page=${page}&lang=en`;
         const response = await this.api.get(url);
@@ -156,19 +155,25 @@ class NewsService {
 
   async fetchTrending(page = 1) {
     const categories = ["technology", "business", "entertainment", "sports"];
-    const results = await Promise.all(
-      categories.map(cat => this.fetchTopHeadlines(cat, "us", page))
-    );
-    const allArticles = results.flatMap(r => r.articles || []);
-    const unique = [];
-    const seen = new Set();
-    for (const article of allArticles) {
-      if (article.url && !seen.has(article.url)) {
-        seen.add(article.url);
-        unique.push(article);
+    try {
+      const promises = categories.map(cat => this.fetchTopHeadlines(cat, "us", page));
+      const results = await Promise.all(promises);
+      const allArticles = results.flatMap(result => result.articles || []);
+      
+      const uniqueArticles = [];
+      const seenUrls = new Set();
+      for (const article of allArticles) {
+        if (article.url && !seenUrls.has(article.url)) {
+          seenUrls.add(article.url);
+          uniqueArticles.push(article);
+        }
       }
+      
+      return uniqueArticles.slice(0, 30);
+    } catch (error) {
+      console.error("Failed to fetch trending:", error);
+      return [];
     }
-    return unique.slice(0, 30);
   }
 }
 

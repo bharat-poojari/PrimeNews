@@ -1,5 +1,5 @@
-// src/pages/HomePage.jsx - Optimized version
-import { useEffect, useState } from 'react';
+// src/pages/HomePage.jsx
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FaNewspaper, FaArrowRight, FaFilter } from 'react-icons/fa';
 import { BreakingTicker } from '../components/layout/BreakingTicker';
@@ -7,86 +7,42 @@ import { HeroSection } from '../components/news/HeroSection';
 import { NewsCard } from '../components/news/NewsCard';
 import { CategoryTabs } from '../components/common/CategoryTabs';
 import { LoaderSkeleton } from '../components/common/LoaderSkeleton';
-import { newsService } from '../services/api';
+import { useNews } from '../hooks/useNews';
 import { Link } from 'react-router-dom';
 import { useNewsStore } from '../store/newsStore';
 
 export const HomePage = () => {
-  const [featuredNews, setFeaturedNews] = useState([]);
-  const [filteredNews, setFilteredNews] = useState([]);
-  const [allCategoryNews, setAllCategoryNews] = useState({});
-  const [loading, setLoading] = useState(true);
   const [showAllCategories, setShowAllCategories] = useState(true);
   const { currentCategory, setCurrentCategory } = useNewsStore();
+  
+  const { articles: featuredNews, loading: featuredLoading } = useNews('general', 20);
+  const { articles: techNews, loading: techLoading } = useNews('technology', 6);
+  const { articles: businessNews, loading: businessLoading } = useNews('business', 6);
+  const { articles: sportsNews, loading: sportsLoading } = useNews('sports', 6);
+  const { articles: entertainmentNews, loading: entertainmentLoading } = useNews('entertainment', 6);
+  const { articles: scienceNews, loading: scienceLoading } = useNews('science', 6);
+  const { articles: healthNews, loading: healthLoading } = useNews('health', 6);
+
+  const allCategoryNews = {
+    technology: techNews,
+    business: businessNews,
+    sports: sportsNews,
+    entertainment: entertainmentNews,
+    science: scienceNews,
+    health: healthNews,
+  };
 
   const categories = ['technology', 'business', 'sports', 'entertainment', 'science', 'health'];
 
-  const fetchCategoryNews = async (category) => {
-    const data = await newsService.fetchTopHeadlines(category, 'us', 1);
-    return (data.articles || []).slice(0, 6);
-  };
-
-  const fetchAllCategoriesNews = async () => {
-    // Parallel fetching for all categories - MUCH FASTER
-    const promises = categories.map(cat => fetchCategoryNews(cat));
-    const results = await Promise.all(promises);
-    
-    const categoryData = {};
-    categories.forEach((cat, index) => {
-      categoryData[cat] = results[index];
-    });
-    setAllCategoryNews(categoryData);
-  };
-
-  const handleCategorySelect = async (categoryId) => {
+  const handleCategorySelect = (categoryId) => {
     setCurrentCategory(categoryId);
     setShowAllCategories(false);
-    setLoading(true);
-    
-    // Parallel fetch for both headline and category news
-    const [headlines, categoryArticles] = await Promise.all([
-      newsService.fetchTopHeadlines(categoryId, 'us', 1),
-      fetchCategoryNews(categoryId)
-    ]);
-    
-    setFeaturedNews(headlines.articles || []);
-    setFilteredNews(categoryArticles);
-    setLoading(false);
   };
 
-  const handleShowAllCategories = async () => {
+  const handleShowAllCategories = () => {
     setCurrentCategory('general');
     setShowAllCategories(true);
-    setLoading(true);
-    
-    // Parallel fetch for all data
-    const [headlines, categoryData] = await Promise.all([
-      newsService.fetchTopHeadlines('general', 'us', 1),
-      fetchAllCategoriesNews()
-    ]);
-    
-    setFeaturedNews(headlines.articles || []);
-    setLoading(false);
   };
-
-  useEffect(() => {
-    const loadInitialData = async () => {
-      setLoading(true);
-      
-      // Parallel fetch for initial data - MUCH FASTER
-      const [headlines, categoryData] = await Promise.all([
-        newsService.fetchTopHeadlines('general', 'us', 1),
-        fetchAllCategoriesNews()
-      ]);
-      
-      setFeaturedNews(headlines.articles || []);
-      setShowAllCategories(true);
-      setCurrentCategory('general');
-      setLoading(false);
-    };
-    
-    loadInitialData();
-  }, []);
 
   const getCategoryDisplayName = () => {
     const names = {
@@ -96,8 +52,7 @@ export const HomePage = () => {
     return names[currentCategory] || 'General';
   };
 
-  // Show loading state only on first load
-  if (loading && featuredNews.length === 0) {
+  if (featuredLoading && featuredNews.length === 0) {
     return <LoaderSkeleton type="home" />;
   }
 
@@ -114,7 +69,6 @@ export const HomePage = () => {
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
             className="mb-8"
           >
             <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
@@ -140,59 +94,12 @@ export const HomePage = () => {
             />
           </motion.section>
 
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1, duration: 0.3 }}
-            className="mb-12"
-          >
-            <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-              <div>
-                <h2 className="font-serif text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                  {showAllCategories ? 'Top Stories' : `${getCategoryDisplayName()} News`}
-                </h2>
-                <div className="w-12 h-0.5 bg-gradient-to-r from-blue-600 to-transparent" />
-              </div>
-              {!showAllCategories && (
-                <Link 
-                  to={`/category/${currentCategory}`}
-                  className="group flex items-center space-x-1 text-blue-600 hover:text-blue-700 transition-colors text-sm font-medium"
-                >
-                  <span>View All</span>
-                  <FaArrowRight className="group-hover:translate-x-1 transition-transform text-xs" />
-                </Link>
-              )}
-            </div>
-          </motion.section>
-
-          {!showAllCategories && filteredNews.length > 0 && (
-            <motion.section
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15, duration: 0.3 }}
-              className="mb-12"
-            >
-              <div className="mb-4">
-                <h2 className="font-serif text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-1 capitalize">
-                  More {currentCategory} News
-                </h2>
-                <div className="w-12 h-0.5 bg-gradient-to-r from-blue-600 to-transparent" />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                {filteredNews.map((article, index) => (
-                  <NewsCard key={`filtered-${index}`} article={article} />
-                ))}
-              </div>
-            </motion.section>
-          )}
-
-          {showAllCategories && Object.entries(allCategoryNews).map(([category, articles], idx) => (
-            articles.length > 0 && (
+          {showAllCategories && categories.map((category) => (
+            allCategoryNews[category]?.length > 0 && (
               <motion.section
                 key={category}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.05 * idx, duration: 0.3 }}
                 className="mb-12"
               >
                 <div className="relative mb-4">
@@ -214,7 +121,7 @@ export const HomePage = () => {
                 </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                  {articles.slice(0, 6).map((article, i) => (
+                  {allCategoryNews[category].slice(0, 6).map((article, i) => (
                     <NewsCard key={`${category}-${i}`} article={article} />
                   ))}
                 </div>
@@ -226,3 +133,5 @@ export const HomePage = () => {
     </div>
   );
 };
+
+export default HomePage;
