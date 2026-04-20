@@ -1,6 +1,6 @@
 // src/pages/CategoryPage.jsx
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { newsService } from '../services/api';
 import { NewsCard } from '../components/news/NewsCard';
@@ -19,6 +19,7 @@ const CATEGORY_MAP = {
 
 export const CategoryPage = () => {
   const { categoryId } = useParams();
+  const navigate = useNavigate();
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -32,8 +33,13 @@ export const CategoryPage = () => {
 
   const fetchNews = useCallback(async (pageNum, isLoadMore = false) => {
     try {
+      setError(null);
+      console.log(`Fetching ${categoryId} news, page ${pageNum}`);
+      
       const data = await newsService.fetchTopHeadlines(categoryId, 'us', pageNum);
       const newArticles = data.articles || [];
+      
+      console.log(`Received ${newArticles.length} articles for ${categoryId}`);
       
       if (isLoadMore) {
         setArticles(prev => {
@@ -45,7 +51,7 @@ export const CategoryPage = () => {
         setArticles(newArticles);
       }
       
-      setHasMore(newArticles.length === 30);
+      setHasMore(newArticles.length === 30 && pageNum < 5);
       return newArticles;
     } catch (err) {
       console.error('Failed to fetch news:', err);
@@ -86,7 +92,7 @@ export const CategoryPage = () => {
     };
   }, [loadingMore, hasMore, loading, page, fetchNews]);
 
-  // Initial load
+  // Initial load - refetch when categoryId changes
   useEffect(() => {
     setPage(1);
     setArticles([]);
@@ -108,7 +114,10 @@ export const CategoryPage = () => {
             <div className="text-center py-12">
               <p className="text-red-600 dark:text-red-400">{error}</p>
               <button 
-                onClick={() => window.location.reload()} 
+                onClick={() => {
+                  setLoading(true);
+                  fetchNews(1, false).finally(() => setLoading(false));
+                }} 
                 className="inline-block mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Retry
@@ -123,16 +132,16 @@ export const CategoryPage = () => {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 w-full">
       <main className="w-full" style={{ paddingTop: '1.4rem' }}>
-        {/* Back Button - Full width with content wrapper */}
+        {/* Back Button */}
         <div className="w-full border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 sticky top-14 lg:top-16 z-30">
           <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-3">
-            <Link 
-              to="/" 
+            <button 
+              onClick={() => navigate('/')}
               className="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-sm font-medium"
             >
               <FaArrowLeft className="mr-2 text-xs" />
               Back to Home
-            </Link>
+            </button>
           </div>
         </div>
 
@@ -148,12 +157,22 @@ export const CategoryPage = () => {
           </div>
         </div>
 
-        {/* Articles Grid - Full width cards */}
+        {/* Articles Grid */}
         <div className="w-full">
           <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
             {articles.length === 0 && !loading ? (
               <div className="text-center py-12">
+                <div className="text-gray-400 text-6xl mb-4">📰</div>
                 <p className="text-gray-500 dark:text-gray-400">No articles found in this category.</p>
+                <button
+                  onClick={() => {
+                    setLoading(true);
+                    fetchNews(1, false).finally(() => setLoading(false));
+                  }}
+                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Try Again
+                </button>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 md:gap-6">
@@ -178,3 +197,5 @@ export const CategoryPage = () => {
     </div>
   );
 };
+
+export default CategoryPage;
