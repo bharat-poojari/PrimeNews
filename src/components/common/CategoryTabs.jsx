@@ -1,6 +1,6 @@
-// src/components/common/CategoryTabs.jsx
+// PrimeNews/src/components/common/CategoryTabs.jsx
 import { motion } from 'framer-motion';
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { 
   FaNewspaper, 
   FaBriefcase, 
@@ -14,9 +14,9 @@ import {
 } from 'react-icons/fa';
 
 export const CategoryTabs = ({ onCategorySelect, activeCategory = 'general' }) => {
+  const [scrollPosition, setScrollPosition] = useState(0);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
-  const scrollContainerRef = useRef(null);
   
   const CATEGORIES = [
     { id: "general", name: "General", icon: FaNewspaper, color: "blue" },
@@ -29,32 +29,18 @@ export const CategoryTabs = ({ onCategorySelect, activeCategory = 'general' }) =
   ];
 
   const handleScroll = (direction) => {
-    if (scrollContainerRef.current) {
-      const scrollAmount = direction === 'left' ? -250 : 250;
-      scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-    }
-  };
-
-  const handleScrollEvent = () => {
-    if (scrollContainerRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
-      setShowLeftArrow(scrollLeft > 10);
-      setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10);
-    }
-  };
-
-  useEffect(() => {
-    const container = scrollContainerRef.current;
+    const container = document.getElementById('category-scroll-container');
     if (container) {
-      handleScrollEvent();
-      container.addEventListener('scroll', handleScrollEvent);
-      window.addEventListener('resize', handleScrollEvent);
-      return () => {
-        container.removeEventListener('scroll', handleScrollEvent);
-        window.removeEventListener('resize', handleScrollEvent);
-      };
+      const scrollAmount = direction === 'left' ? -200 : 200;
+      container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
-  }, []);
+  };
+
+  const handleScrollEvent = (e) => {
+    const target = e.target;
+    setShowLeftArrow(target.scrollLeft > 0);
+    setShowRightArrow(target.scrollLeft < target.scrollWidth - target.clientWidth - 10);
+  };
 
   const colorClasses = {
     blue: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
@@ -77,7 +63,7 @@ export const CategoryTabs = ({ onCategorySelect, activeCategory = 'general' }) =
       {showLeftArrow && (
         <button
           onClick={() => handleScroll('left')}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white dark:bg-gray-800 rounded-full shadow-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 border border-gray-200 dark:border-gray-700"
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white dark:bg-gray-800 rounded-full shadow-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
           aria-label="Scroll left"
         >
           <FaChevronLeft className="text-gray-600 dark:text-gray-400 text-sm" />
@@ -85,8 +71,9 @@ export const CategoryTabs = ({ onCategorySelect, activeCategory = 'general' }) =
       )}
       
       <div
-        ref={scrollContainerRef}
+        id="category-scroll-container"
         className="overflow-x-auto scrollbar-hide py-2 px-2"
+        onScroll={handleScrollEvent}
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         <div className="flex space-x-2 min-w-max">
@@ -118,7 +105,7 @@ export const CategoryTabs = ({ onCategorySelect, activeCategory = 'general' }) =
       {showRightArrow && (
         <button
           onClick={() => handleScroll('right')}
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white dark:bg-gray-800 rounded-full shadow-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 border border-gray-200 dark:border-gray-700"
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white dark:bg-gray-800 rounded-full shadow-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
           aria-label="Scroll right"
         >
           <FaChevronRight className="text-gray-600 dark:text-gray-400 text-sm" />
