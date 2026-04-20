@@ -44,28 +44,29 @@ export const Navbar = () => {
 
   return (
     <>
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 w-full ${
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled 
           ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 shadow-lg' 
           : 'bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700'
       }`}>
-        <div className="w-full px-4 lg:px-6">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 lg:h-16">
             {/* Logo */}
             <Link to="/" className="flex items-center shrink-0" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-              <h1 className="font-serif text-xl lg:text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-                Prime<span className="text-blue-600 bg-none">News</span>
+              <h1 className="font-serif text-xl lg:text-2xl font-bold">
+                <span className="text-gray-900 dark:text-white">Prime</span>
+                <span className="text-blue-600">News</span>
               </h1>
             </Link>
 
             {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center space-x-1">
+            <div className="hidden lg:flex items-center gap-1">
               {navItems.map((item) => (
                 <NavLink
                   key={item.path}
                   to={item.path}
                   className={({ isActive }) =>
-                    `flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm ${
+                    `flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm ${
                       isActive
                         ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20'
                         : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
@@ -80,7 +81,7 @@ export const Navbar = () => {
             </div>
 
             {/* Right side buttons */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2">
               <button
                 onClick={handleSearchClick}
                 className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200"
@@ -116,10 +117,10 @@ export const Navbar = () => {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
-              className="lg:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg w-full"
+              className="lg:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg"
             >
               <div className="px-4 py-4">
-                <div className="space-y-2">
+                <div className="space-y-1">
                   {navItems.map((item, index) => (
                     <motion.div
                       key={item.path}
@@ -131,7 +132,7 @@ export const Navbar = () => {
                         to={item.path}
                         onClick={() => setIsOpen(false)}
                         className={({ isActive }) =>
-                          `flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 text-base ${
+                          `flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 text-base ${
                             isActive
                               ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20'
                               : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'

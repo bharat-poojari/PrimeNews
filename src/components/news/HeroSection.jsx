@@ -17,15 +17,15 @@ export const HeroSection = ({ articles }) => {
   }
 
   const mainArticle = articles[0];
-  const secondaryArticles = articles.slice(1, 4);
-  const sideArticles = articles.slice(4, 6);
+  const secondaryArticles = articles.slice(1, 3);
+  const sideArticles = articles.slice(3, 5);
 
   const getArticleId = (article) => {
     return btoa(encodeURIComponent(article.url || article.title)).substring(0, 20);
   };
 
-  const getFallbackImage = () => {
-    return 'https://picsum.photos/id/104/1200/800';
+  const getFallbackImage = (id = 104) => {
+    return `https://picsum.photos/id/${id}/1200/800`;
   };
 
   const handleImageError = (url) => {
@@ -61,14 +61,15 @@ export const HeroSection = ({ articles }) => {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="mb-16"
+      className="mb-8 lg:mb-12"
     >
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-6">
+        {/* Main Article */}
         <motion.div variants={itemVariants} className="lg:col-span-2">
-          <article className="relative h-[400px] lg:h-[500px] rounded-2xl overflow-hidden group cursor-pointer shadow-2xl">
+          <article className="relative h-[380px] lg:h-[460px] rounded-xl overflow-hidden group cursor-pointer shadow-lg">
             <Link to={`/article/${getArticleId(mainArticle)}`} state={{ article: mainArticle }}>
               <LazyLoadImage
-                src={!imageErrors[mainArticle.url] && mainArticle.urlToImage ? mainArticle.urlToImage : getFallbackImage()}
+                src={!imageErrors[mainArticle.url] && mainArticle.urlToImage ? mainArticle.urlToImage : getFallbackImage(104)}
                 alt={mainArticle.title}
                 effect="blur"
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
@@ -77,38 +78,35 @@ export const HeroSection = ({ articles }) => {
               
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
               
-              <div className="absolute bottom-0 left-0 right-0 p-6 lg:p-8">
+              <div className="absolute bottom-0 left-0 right-0 p-5 lg:p-7">
                 <motion.div
                   initial={{ y: 50, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.3, duration: 0.6 }}
-                  className="max-w-4xl"
                 >
-                  <div className="flex items-center space-x-4 mb-3 text-white/80 text-sm">
-                    <span className="font-semibold text-white">
-                      {mainArticle.source?.name || 'News Source'}
+                  <div className="flex flex-wrap items-center gap-3 mb-2 text-white/80 text-xs lg:text-sm">
+                    <span className="px-2 py-0.5 bg-blue-600 rounded font-semibold text-white text-xs">
+                      {mainArticle.source?.name || 'News'}
                     </span>
-                    <span className="w-1 h-1 bg-white/50 rounded-full" />
-                    <span className="flex items-center">
-                      <FaRegClock className="mr-2 text-xs" />
+                    <span className="flex items-center gap-1">
+                      <FaRegClock className="text-xs" />
                       {mainArticle.publishedAt ? formatDistanceToNow(new Date(mainArticle.publishedAt), { addSuffix: true }) : 'Recently'}
                     </span>
                   </div>
                   
-                  <h1 className="font-serif text-xl lg:text-3xl xl:text-4xl font-bold text-white mb-3 leading-tight line-clamp-3">
+                  <h2 className="font-serif text-xl lg:text-2xl xl:text-3xl font-bold text-white mb-2 leading-tight line-clamp-3">
                     {mainArticle.title}
-                  </h1>
+                  </h2>
                   
-                  <p className="text-white/80 text-sm lg:text-base mb-4 line-clamp-2">
+                  <p className="text-white/80 text-sm lg:text-base mb-3 line-clamp-2 hidden sm:block">
                     {mainArticle.description || 'Click to read full article'}
                   </p>
                   
-                  <div className="flex items-center space-x-6">
-                    <span className="inline-flex items-center text-blue-400 font-semibold group text-sm lg:text-base">
+                  <div className="flex items-center gap-4">
+                    <span className="inline-flex items-center gap-2 text-blue-400 font-semibold group text-sm">
                       Read Full Story
-                      <FaArrowRight className="ml-2 group-hover:translate-x-1 transition-transform text-sm" />
+                      <FaArrowRight className="group-hover:translate-x-1 transition-transform text-xs" />
                     </span>
-                    
                     <BookmarkButton article={mainArticle} />
                   </div>
                 </motion.div>
@@ -117,6 +115,7 @@ export const HeroSection = ({ articles }) => {
           </article>
         </motion.div>
 
+        {/* Secondary Articles */}
         <motion.div variants={itemVariants} className="space-y-4">
           {secondaryArticles.map((article, index) => (
             <motion.article
@@ -124,14 +123,14 @@ export const HeroSection = ({ articles }) => {
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 + index * 0.1 }}
-              whileHover={{ y: -3 }}
-              className="group cursor-pointer"
+              whileHover={{ y: -2 }}
+              className="group cursor-pointer bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all"
             >
               <Link to={`/article/${getArticleId(article)}`} state={{ article }}>
-                <div className="flex gap-3">
-                  <div className="relative w-24 h-24 lg:w-28 lg:h-28 flex-shrink-0 overflow-hidden rounded-lg">
+                <div className="flex gap-3 p-3">
+                  <div className="relative w-20 h-20 lg:w-24 lg:h-24 flex-shrink-0 overflow-hidden rounded-lg">
                     <LazyLoadImage
-                      src={!imageErrors[article.url] && article.urlToImage ? article.urlToImage : 'https://picsum.photos/id/20/150/150'}
+                      src={!imageErrors[article.url] && article.urlToImage ? article.urlToImage : getFallbackImage(20 + index * 10)}
                       alt={article.title}
                       effect="blur"
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
@@ -139,12 +138,12 @@ export const HeroSection = ({ articles }) => {
                     />
                   </div>
                   
-                  <div className="flex-1">
-                    <h3 className="font-serif font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300 line-clamp-3 text-sm lg:text-base mb-1">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2 text-sm lg:text-base mb-1">
                       {article.title}
                     </h3>
-                    <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
-                      <FaRegClock className="mr-1 text-xs" />
+                    <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                      <FaRegClock className="text-xs" />
                       <span>{article.publishedAt ? formatDistanceToNow(new Date(article.publishedAt), { addSuffix: true }) : 'Recently'}</span>
                     </div>
                   </div>
@@ -153,9 +152,10 @@ export const HeroSection = ({ articles }) => {
             </motion.article>
           ))}
           
+          {/* Side Stories */}
           {sideArticles.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <h3 className="font-serif font-bold mb-3 text-gray-900 dark:text-white text-sm">
+            <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
+              <h3 className="font-semibold mb-2 text-gray-700 dark:text-gray-300 text-sm">
                 More Top Stories
               </h3>
               <div className="space-y-2">
@@ -166,7 +166,7 @@ export const HeroSection = ({ articles }) => {
                     state={{ article }}
                     className="block group"
                   >
-                    <div className="flex items-start space-x-2">
+                    <div className="flex items-start gap-2">
                       <span className="text-blue-600 font-bold text-xs">•</span>
                       <span className="text-xs text-gray-700 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
                         {article.title}
@@ -200,7 +200,7 @@ const BookmarkButton = ({ article }) => {
   return (
     <button
       onClick={handleBookmark}
-      className="p-2 bg-white/10 backdrop-blur-sm rounded-full hover:bg-white/20 transition-all duration-300"
+      className="p-1.5 bg-white/10 backdrop-blur-sm rounded-full hover:bg-white/20 transition-all duration-300"
       aria-label={bookmarked ? 'Remove bookmark' : 'Add bookmark'}
     >
       {bookmarked ? (

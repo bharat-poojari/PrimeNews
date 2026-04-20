@@ -58,16 +58,16 @@ export const BreakingTicker = () => {
     const marqueeText = headlines.map(h => `${h.source?.name || 'News'}: ${h.title}`).join(' ••• ');
     
     return (
-      <div className="fixed top-14 lg:top-16 left-0 right-0 bg-gradient-to-r from-red-600 to-red-800 text-white py-2 z-40 shadow-lg w-full">
-        <div className="w-full px-4">
+      <div className="fixed top-14 lg:top-16 left-0 right-0 bg-gradient-to-r from-red-600 to-red-800 text-white py-1.5 z-40 shadow-lg">
+        <div className="w-full px-3">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1 px-2 py-0.5 bg-white/20 rounded-full flex-shrink-0">
               <FaCircle className="text-red-300 text-[6px] animate-pulse" />
-              <span className="font-bold text-[10px] uppercase">Breaking</span>
+              <span className="font-bold text-[9px] uppercase">Breaking</span>
             </div>
             <div className="flex-1 overflow-hidden cursor-pointer" onClick={() => handleArticleClick(headlines[0])}>
               <div className="animate-marquee whitespace-nowrap">
-                <span className="text-xs">{marqueeText}</span>
+                <span className="text-[11px]">{marqueeText}</span>
               </div>
             </div>
           </div>
@@ -77,10 +77,10 @@ export const BreakingTicker = () => {
   }
 
   return (
-    <div className="fixed top-16 left-0 right-0 bg-gradient-to-r from-red-600 to-red-800 text-white py-1.5 z-40 shadow-lg w-full">
-      <div className="w-full px-6">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full flex-shrink-0">
+    <div className="fixed top-16 left-0 right-0 bg-gradient-to-r from-red-600 to-red-800 text-white py-1.5 z-40 shadow-lg">
+      <div className="max-w-[1400px] mx-auto px-4 lg:px-6">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 px-2 py-0.5 bg-white/20 rounded-full flex-shrink-0">
             <FaCircle className="text-red-300 text-[8px] animate-pulse" />
             <span className="font-bold text-xs uppercase tracking-wider">Breaking News</span>
           </div>
@@ -105,15 +105,15 @@ export const BreakingTicker = () => {
             </AnimatePresence>
           </div>
 
-          <div className="flex items-center gap-1 flex-shrink-0">
+          <div className="flex items-center gap-0.5 flex-shrink-0">
             <button onClick={() => setCurrentIndex((prev) => (prev - 1 + headlines.length) % headlines.length)} className="p-1 hover:bg-white/20 rounded transition-colors">
-              <FaChevronLeft className="text-xs" />
+              <FaChevronLeft className="text-[11px]" />
             </button>
             <button onClick={() => setIsPaused(!isPaused)} className="p-1 hover:bg-white/20 rounded transition-colors">
-              {isPaused ? <FaPlay className="text-xs" /> : <FaPause className="text-xs" />}
+              {isPaused ? <FaPlay className="text-[11px]" /> : <FaPause className="text-[11px]" />}
             </button>
             <button onClick={() => setCurrentIndex((prev) => (prev + 1) % headlines.length)} className="p-1 hover:bg-white/20 rounded transition-colors">
-              <FaChevronRight className="text-xs" />
+              <FaChevronRight className="text-[11px]" />
             </button>
           </div>
         </div>

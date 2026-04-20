@@ -30,7 +30,7 @@ export const CategoryTabs = ({ onCategorySelect, activeCategory = 'general' }) =
 
   const handleScroll = (direction) => {
     if (scrollContainerRef.current) {
-      const scrollAmount = direction === 'left' ? -250 : 250;
+      const scrollAmount = direction === 'left' ? -200 : 200;
       scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
   };
@@ -77,19 +77,19 @@ export const CategoryTabs = ({ onCategorySelect, activeCategory = 'general' }) =
       {showLeftArrow && (
         <button
           onClick={() => handleScroll('left')}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white dark:bg-gray-800 rounded-full shadow-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 border border-gray-200 dark:border-gray-700"
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white dark:bg-gray-800 rounded-full shadow-md p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 border border-gray-200 dark:border-gray-700"
           aria-label="Scroll left"
         >
-          <FaChevronLeft className="text-gray-600 dark:text-gray-400 text-sm" />
+          <FaChevronLeft className="text-gray-600 dark:text-gray-400 text-xs" />
         </button>
       )}
       
       <div
         ref={scrollContainerRef}
-        className="overflow-x-auto scrollbar-hide py-2 px-2"
+        className="overflow-x-auto scrollbar-hide py-2 px-1"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
-        <div className="flex space-x-2 min-w-max">
+        <div className="flex gap-2 min-w-max">
           {CATEGORIES.map((category) => {
             const isActive = activeCategory === category.id;
             return (
@@ -99,16 +99,16 @@ export const CategoryTabs = ({ onCategorySelect, activeCategory = 'general' }) =
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleCategoryClick(category.id)}
                 className={`
-                  px-4 py-2 rounded-full font-medium transition-all duration-300 
-                  flex items-center gap-2 text-sm md:text-base whitespace-nowrap
+                  px-3 py-1.5 rounded-full font-medium transition-all duration-300 
+                  flex items-center gap-1.5 text-sm whitespace-nowrap
                   ${isActive 
-                    ? `${colorClasses[category.color]} shadow-md scale-105` 
+                    ? `${colorClasses[category.color]} shadow-md` 
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                   }
                 `}
               >
-                <category.icon className={`text-sm md:text-base ${isActive ? 'animate-pulse' : ''}`} />
-                <span className="font-semibold">{category.name}</span>
+                <category.icon className={`text-sm ${isActive ? 'animate-pulse' : ''}`} />
+                <span>{category.name}</span>
               </motion.button>
             );
           })}
@@ -118,10 +118,10 @@ export const CategoryTabs = ({ onCategorySelect, activeCategory = 'general' }) =
       {showRightArrow && (
         <button
           onClick={() => handleScroll('right')}
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white dark:bg-gray-800 rounded-full shadow-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 border border-gray-200 dark:border-gray-700"
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white dark:bg-gray-800 rounded-full shadow-md p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 border border-gray-200 dark:border-gray-700"
           aria-label="Scroll right"
         >
-          <FaChevronRight className="text-gray-600 dark:text-gray-400 text-sm" />
+          <FaChevronRight className="text-gray-600 dark:text-gray-400 text-xs" />
         </button>
       )}
     </div>

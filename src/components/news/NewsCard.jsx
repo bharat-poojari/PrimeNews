@@ -29,17 +29,19 @@ export const NewsCard = ({ article, variant = 'default' }) => {
     return 'https://picsum.photos/id/104/800/500';
   };
 
+  const imageUrl = !imageError && article.urlToImage ? article.urlToImage : getFallbackImage();
+
   if (variant === 'featured') {
     return (
       <motion.article
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden group hover:shadow-xl transition-shadow h-full"
+        className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden group hover:shadow-xl transition-all duration-300 h-full"
       >
         <Link to={`/article/${articleId}`} state={{ article }} className="block h-full">
-          <div className="relative h-48 lg:h-56 overflow-hidden">
+          <div className="relative h-48 lg:h-52 overflow-hidden">
             <img
-              src={!imageError && article.urlToImage ? article.urlToImage : getFallbackImage()}
+              src={imageUrl}
               alt={article.title}
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               loading="lazy"
@@ -52,8 +54,8 @@ export const NewsCard = ({ article, variant = 'default' }) => {
             </div>
           </div>
           <div className="p-3">
-            <div className="flex items-center text-[10px] text-gray-500 dark:text-gray-400 mb-1">
-              <FaRegClock className="mr-1 text-[10px]" />
+            <div className="flex items-center gap-1 text-[10px] text-gray-500 dark:text-gray-400 mb-1">
+              <FaRegClock className="text-[10px]" />
               {article.publishedAt ? formatDistanceToNow(new Date(article.publishedAt), { addSuffix: true }) : 'Recently'}
             </div>
             <h2 className="font-serif font-bold text-sm lg:text-base text-gray-900 dark:text-white mb-1 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
@@ -86,30 +88,30 @@ export const NewsCard = ({ article, variant = 'default' }) => {
     <motion.article
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden group hover:shadow-lg transition-shadow h-full"
+      className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden group hover:shadow-lg transition-all duration-300 h-full flex flex-col"
     >
-      <Link to={`/article/${articleId}`} state={{ article }} className="block h-full">
-        <div className="relative h-36 sm:h-40 overflow-hidden">
+      <Link to={`/article/${articleId}`} state={{ article }} className="block h-full flex flex-col">
+        <div className="relative h-40 overflow-hidden">
           <img
-            src={!imageError && article.urlToImage ? article.urlToImage : getFallbackImage()}
+            src={imageUrl}
             alt={article.title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
             onError={() => setImageError(true)}
           />
         </div>
-        <div className="p-3">
-          <div className="flex items-center justify-between text-[10px] text-gray-500 dark:text-gray-400 mb-1">
-            <span className="font-medium text-blue-600 dark:text-blue-400">{article.source?.name || 'News'}</span>
-            <span className="flex items-center">
-              <FaRegClock className="mr-1 text-[10px]" />
+        <div className="p-3 flex-1 flex flex-col">
+          <div className="flex items-center justify-between gap-2 text-[10px] text-gray-500 dark:text-gray-400 mb-1">
+            <span className="font-medium text-blue-600 dark:text-blue-400 truncate">{article.source?.name || 'News'}</span>
+            <span className="flex items-center gap-1 flex-shrink-0">
+              <FaRegClock className="text-[10px]" />
               {article.publishedAt ? formatDistanceToNow(new Date(article.publishedAt), { addSuffix: true }) : 'Recently'}
             </span>
           </div>
           <h3 className="font-serif font-bold text-gray-900 dark:text-white mb-1 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-sm">
             {article.title}
           </h3>
-          <p className="text-gray-600 dark:text-gray-300 text-xs line-clamp-2 mb-2">
+          <p className="text-gray-600 dark:text-gray-300 text-xs line-clamp-2 mb-2 flex-1">
             {article.description || 'Click to read full article'}
           </p>
           <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
