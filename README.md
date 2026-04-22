@@ -24,11 +24,11 @@
 
 ## 📸 Screenshots
 
-  <img src="(https://raw.githubusercontent.com/bharat-poojari/PrimeNews/main/src/screenshots/s1.png)">
-  <img src="(https://raw.githubusercontent.com/bharat-poojari/PrimeNews/main/src/screenshots/s2.png)">
-  <img src="(https://raw.githubusercontent.com/bharat-poojari/PrimeNews/main/src/screenshots/s3.png)">
-  <img src="(https://raw.githubusercontent.com/bharat-poojari/PrimeNews/main/src/screenshots/s4.png)">
-  <img src="(https://raw.githubusercontent.com/bharat-poojari/PrimeNews/main/src/screenshots/s5.png)">
+  <img src="https://raw.githubusercontent.com/bharat-poojari/PrimeNews/main/src/screenshots/s1.png">
+  <img src="https://raw.githubusercontent.com/bharat-poojari/PrimeNews/main/src/screenshots/s2.png">
+  <img src="https://raw.githubusercontent.com/bharat-poojari/PrimeNews/main/src/screenshots/s3.png">
+  <img src="https://raw.githubusercontent.com/bharat-poojari/PrimeNews/main/src/screenshots/s4.png">
+  <img src="https://raw.githubusercontent.com/bharat-poojari/PrimeNews/main/src/screenshots/s5.png">
 
 
 ## 📋 Table of Contents
