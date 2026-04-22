@@ -23,7 +23,7 @@
 </div>
 
 ## 📸 Screenshots
-div style="white-space: nowrap; overflow-x: auto; padding: 10px 0;">
+<div style="white-space: nowrap; overflow-x: auto; padding: 10px 0;">
   <img src="https://raw.githubusercontent.com/bharat-poojari/PrimeNews/main/src/screenshots/s1.png" height="200" style="display:inline-block; margin-right:10px;">
   <img src="https://raw.githubusercontent.com/bharat-poojari/PrimeNews/main/src/screenshots/s2.png" height="200" style="display:inline-block; margin-right:10px;">
   <img src="https://raw.githubusercontent.com/bharat-poojari/PrimeNews/main/src/screenshots/s3.png" height="200" style="display:inline-block; margin-right:10px;">
