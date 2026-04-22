@@ -25,10 +25,11 @@
 ## 📸 Screenshots
 
 <div style="white-space: nowrap; overflow-x: auto; padding: 10px 0;">
-  <img src="https://via.placeholder.com/300x200?text=Home+Page" height="200" style="display:inline-block; margin-right:10px;">
-  <img src="https://via.placeholder.com/300x200?text=Category+Page" height="200" style="display:inline-block; margin-right:10px;">
-  <img src="https://via.placeholder.com/300x200?text=Article+Page" height="200" style="display:inline-block; margin-right:10px;">
-  <img src="https://via.placeholder.com/300x200?text=Search+Page" height="200" style="display:inline-block;">
+  <img src="(https://raw.githubusercontent.com/bharat-poojari/PrimeNews/main/src/screenshots/s1.png)" height="200" style="display:inline-block; margin-right:10px;">
+  <img src="(https://raw.githubusercontent.com/bharat-poojari/PrimeNews/main/src/screenshots/s2.png)" height="200" style="display:inline-block; margin-right:10px;">
+  <img src="(https://raw.githubusercontent.com/bharat-poojari/PrimeNews/main/src/screenshots/s3.png)" height="200" style="display:inline-block; margin-right:10px;">
+  <img src="(https://raw.githubusercontent.com/bharat-poojari/PrimeNews/main/src/screenshots/s4.png)" height="200" style="display:inline-block; margin-right:10px;">
+  <img src="(https://raw.githubusercontent.com/bharat-poojari/PrimeNews/main/src/screenshots/s5.png)" height="200" style="display:inline-block; margin-right:10px;">
 </div>
 
 ## 📋 Table of Contents
