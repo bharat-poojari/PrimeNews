@@ -131,7 +131,7 @@
 ## 📦 Installation
 
 ### Prerequisites
-- Node.js 18.0 or higher
+- Node.js 24.x
 - npm 9.0 or higher
 - Git
 
