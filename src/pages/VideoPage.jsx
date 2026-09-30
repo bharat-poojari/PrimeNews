@@ -22,17 +22,22 @@ export const VideoPage = () => {
     { id: 'business', name: 'Business' },
   ];
 
+  const loadVideos = async (nextQuery = searchQuery, nextCategory = selectedCategory) => {
+    setLoading(true);
+    let query = nextCategory === 'all' ? 'news video' : `${nextCategory} news video`;
+    if (nextQuery && nextQuery.trim()) query = nextQuery.trim();
+
+    const result = await newsService.searchNews(query, 1);
+    const articles = (result.articles || []).slice(0, 24).map((article, index) => ({
+      ...article,
+      thumbnail: article.urlToImage || `https://picsum.photos/id/${(index + 12) % 100}/800/450`,
+    }));
+
+    setVideos(articles);
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const loadVideos = async () => {
-      setLoading(true);
-      let query = selectedCategory === 'all' ? 'news video' : `${selectedCategory} news video`;
-      if (searchQuery) query = searchQuery;
-      
-      const result = await newsService.searchNews(query, 1);
-      const articles = (result.articles || []).slice(0, 24);
-      setVideos(articles);
-      setLoading(false);
-    };
     loadVideos();
   }, [selectedCategory, searchQuery]);
 
@@ -40,7 +45,7 @@ export const VideoPage = () => {
     e.preventDefault();
     if (searchQuery.trim()) {
       setSelectedCategory('all');
-      loadVideos();
+      loadVideos(searchQuery, 'all');
     }
   };
 
@@ -93,18 +98,22 @@ export const VideoPage = () => {
       {videos.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {videos.map((video, index) => (
-            <motion.div key={video.url || index} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(index * 0.05, 0.5) }} whileHover={{ y: -4 }} className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden cursor-pointer group" onClick={() => handleArticleClick(video)}>
-              <div className="relative pb-[56.25%]">
-                <img src={video.urlToImage || `https://picsum.photos/id/${(index + 20) % 100}/400/225`} alt={video.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" onError={(e) => { e.target.src = `https://picsum.photos/id/20/400/225`; }} />
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center">
-                    <FaPlay className="text-white text-lg ml-0.5" />
+            <motion.div key={video.url || index} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(index * 0.05, 0.5) }} whileHover={{ y: -4 }} className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden cursor-pointer group" onClick={() => handleArticleClick(video)}>
+              <div className="relative aspect-video overflow-hidden">
+                <img src={video.thumbnail || `https://picsum.photos/id/${(index + 20) % 100}/800/450`} alt={video.title} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" onError={(e) => { e.target.src = `https://picsum.photos/id/20/800/450`; }} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center shadow-lg">
+                    <FaPlay className="text-white text-xl ml-0.5" />
                   </div>
                 </div>
               </div>
               <div className="p-3">
                 <h3 className="font-bold text-sm line-clamp-2 dark:text-white group-hover:text-red-600 transition-colors">{video.title}</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{video.source?.name || 'News Source'}</p>
+                <div className="mt-2 flex items-center justify-between">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{video.source?.name || 'News Source'}</p>
+                  <span className="px-2 py-0.5 rounded-full bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-300 text-[10px] font-semibold uppercase tracking-wide">Video</span>
+                </div>
               </div>
             </motion.div>
           ))}

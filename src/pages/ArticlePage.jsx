@@ -1,9 +1,9 @@
 // src/pages/ArticlePage.jsx
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, Link, useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { 
   FaFacebook, 
   FaTwitter, 
@@ -36,6 +36,8 @@ export const ArticlePage = () => {
   const [copySuccess, setCopySuccess] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [readingProgress, setReadingProgress] = useState(0);
+  const readingAreaRef = useRef(null);
   
   const { trackArticleClick } = useAnalyticsStore();
   const { addViewedArticle } = useNewsStore();
@@ -73,14 +75,66 @@ export const ArticlePage = () => {
     fetchRelated();
   }, [article, articleId, location.pathname, navigate, trackArticleClick, addViewedArticle]);
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setCopySuccess(true);
-    setTimeout(() => setCopySuccess(false), 2000);
+  useEffect(() => {
+    const updateProgress = () => {
+      const readingArea = readingAreaRef.current;
+      if (!readingArea) return;
+
+      const topOffset = Math.min(180, window.innerHeight * 0.22);
+      const { top, height } = readingArea.getBoundingClientRect();
+      const distance = Math.max(1, height - window.innerHeight + topOffset);
+      const progress = Math.min(100, Math.max(0, ((topOffset - top) / distance) * 100));
+      setReadingProgress(Math.round(progress));
+    };
+
+    updateProgress();
+    window.addEventListener('scroll', updateProgress, { passive: true });
+    document.body.addEventListener('scroll', updateProgress, { passive: true });
+    window.addEventListener('resize', updateProgress);
+
+    return () => {
+      window.removeEventListener('scroll', updateProgress);
+      document.body.removeEventListener('scroll', updateProgress);
+      window.removeEventListener('resize', updateProgress);
+    };
+  }, [article]);
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopySuccess(true);
+      window.setTimeout(() => setCopySuccess(false), 2000);
+    } catch (error) {
+      console.error('Unable to copy article link:', error);
+    }
   };
 
   const getFallbackImage = () => {
-    return 'https://picsum.photos/id/104/1200/600';
+    const seed = (article?.url || article?.title || 'news')
+      .split('')
+      .reduce((total, char) => total + char.charCodeAt(0), 0);
+    return `https://picsum.photos/id/${(seed % 100) + 1}/1200/600`;
+  };
+
+  const cleanArticleText = (value) => String(value || '')
+      .replace(/\[[^\]]*\]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  const buildArticleBody = (sourceArticle) => {
+    const summary = cleanArticleText(sourceArticle?.description);
+    let content = cleanArticleText(sourceArticle?.content);
+    if (summary && content.toLowerCase().startsWith(summary.toLowerCase())) {
+      content = content.slice(summary.length).trim();
+    }
+    if (!content) return [];
+
+    const sentences = content.split(/(?<=[.!?])\s+/).filter(Boolean);
+    const paragraphs = [];
+    for (let i = 0; i < sentences.length; i += 3) {
+      paragraphs.push(sentences.slice(i, i + 3).join(' '));
+    }
+    return paragraphs;
   };
 
   if (!article) {
@@ -89,6 +143,11 @@ export const ArticlePage = () => {
 
   const shareUrl = window.location.href;
   const publishDate = new Date(article.publishedAt);
+  const articleBody = buildArticleBody(article);
+  const summary = cleanArticleText(article.description) || cleanArticleText(article.content);
+  const publishedDateLabel = isValid(publishDate) ? format(publishDate, 'MMMM dd, yyyy') : 'Date unavailable';
+  const authorName = cleanArticleText(article.author);
+  const sourceName = article.source?.name || 'The publisher';
 
   return (
     <>
@@ -103,6 +162,20 @@ export const ArticlePage = () => {
       </Helmet>
 
       <article className="min-h-screen bg-white dark:bg-gray-900 w-full">
+        <div
+          className="fixed inset-x-0 top-14 lg:top-16 z-40 h-1 bg-gray-200/80 dark:bg-gray-700/80"
+          role="progressbar"
+          aria-label="Article reading progress"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={readingProgress}
+        >
+          <div
+            className="h-full bg-blue-600 transition-[width] duration-150"
+            style={{ width: `${readingProgress}%` }}
+          />
+        </div>
+
         {/* Back Button - Sticky full width */}
         <div className="w-full border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 sticky top-14 lg:top-16 z-30">
           <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-3">
@@ -138,7 +211,7 @@ export const ArticlePage = () => {
                   </span>
                   <span className="text-white/80 text-xs lg:text-sm flex items-center">
                     <FaCalendar className="mr-1 text-xs" />
-                    {format(publishDate, 'MMMM dd, yyyy')}
+                    {publishedDateLabel}
                   </span>
                   {article.author && (
                     <span className="text-white/80 text-xs lg:text-sm flex items-center">
@@ -157,10 +230,10 @@ export const ArticlePage = () => {
 
         {/* Article Content Section */}
         <div className="w-full">
-          <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
-            <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
+          <div className="max-w-[1480px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-10 lg:gap-14">
               {/* Main Content */}
-              <div className="lg:w-2/3">
+              <div className="w-full max-w-[1040px]">
                 {/* Action Buttons */}
                 <div className="flex flex-wrap items-center justify-between gap-4 mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">
                   <div className="flex items-center gap-3">
@@ -228,21 +301,67 @@ export const ArticlePage = () => {
                   </a>
                 </div>
 
-                {/* Article Text */}
-                <div className="prose prose-lg dark:prose-invert max-w-none">
-                  <p className="text-lg lg:text-xl font-medium mb-6 text-gray-700 dark:text-gray-300 leading-relaxed">
-                    {article.description}
-                  </p>
-                  
-                  {article.content ? (
-                    <div className="text-gray-800 dark:text-gray-200 text-base lg:text-lg leading-relaxed space-y-4">
-                      <p>{article.content.replace(/\[.*?\]/g, '')}</p>
+                <div ref={readingAreaRef} className="max-w-[880px]">
+                  <section className="mb-10 border-l-4 border-blue-600 bg-blue-50/70 dark:bg-blue-950/30 px-5 py-5 sm:px-7 sm:py-6">
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-700 dark:text-blue-300 mb-3">
+                      Story brief
+                    </p>
+                    <p className="text-xl sm:text-2xl font-serif font-semibold leading-relaxed text-gray-900 dark:text-white">
+                      {summary || 'Open the publisher’s report for the complete story.'}
+                    </p>
+                  </section>
+
+                  <section className="prose prose-lg dark:prose-invert max-w-none">
+                    <div className="flex items-center gap-3 mb-5">
+                      <span className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
+                      <h2 className="!m-0 text-xs font-bold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">
+                        Article details
+                      </h2>
+                      <span className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
                     </div>
-                  ) : (
-                    <div className="text-gray-600 dark:text-gray-400 text-base lg:text-lg">
-                      <p>Full article content is available on the source website. Click the "Read Full Article" button above to view the complete story.</p>
+                    {articleBody.length > 0 ? (
+                      <div className="text-gray-800 dark:text-gray-200 text-lg lg:text-xl leading-[1.85] space-y-6">
+                    {articleBody.map((paragraph, index) => (
+                      <p key={`${article.url || article.title}-paragraph-${index}`}>{paragraph}</p>
+                    ))}
+                      </div>
+                    ) : (
+                      <div className="border-y border-gray-200 dark:border-gray-700 py-5 text-gray-600 dark:text-gray-300">
+                        <p className="text-base leading-relaxed">
+                          {sourceName} supplied a summary rather than the full article text. Read the complete report on the publisher’s website.
+                        </p>
+                        {article.url && article.url !== '#' && (
+                          <a
+                            href={article.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex mt-4 text-blue-700 dark:text-blue-300 font-semibold hover:underline"
+                          >
+                            Continue to {sourceName} <span aria-hidden="true" className="ml-1">&rarr;</span>
+                          </a>
+                        )}
+                      </div>
+                    )}
+                  </section>
+
+                  <section className="mt-10 flex items-center gap-4 border-y border-gray-200 dark:border-gray-700 py-5">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
+                      <FaUser aria-hidden="true" />
                     </div>
-                  )}
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
+                        {authorName ? 'Byline' : 'Published by'}
+                      </p>
+                      <p className="mt-1 font-semibold text-gray-900 dark:text-white">
+                        {authorName || sourceName}
+                      </p>
+                      {authorName && (
+                        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                          Published by {sourceName}. The feed does not provide a verified author biography.
+                        </p>
+                      )}
+                    </div>
+                  </section>
                 </div>
 
                 {/* Source Info */}
@@ -257,7 +376,7 @@ export const ArticlePage = () => {
               </div>
 
               {/* Related Articles Sidebar */}
-              <div className="lg:w-1/3">
+              <div className="w-full">
                 <div className="sticky top-24 lg:top-28">
                   <h2 className="text-xl lg:text-2xl font-bold mb-6 dark:text-white">Related Articles</h2>
                   {relatedArticles.length > 0 ? (

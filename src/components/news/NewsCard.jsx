@@ -26,10 +26,48 @@ export const NewsCard = ({ article, variant = 'default' }) => {
   };
 
   const getFallbackImage = () => {
-    return 'https://picsum.photos/id/104/800/500';
+    const seed = (article?.url || article?.title || 'news')
+      .split('')
+      .reduce((total, char) => total + char.charCodeAt(0), 0);
+    return `https://picsum.photos/id/${(seed % 100) + 1}/800/500`;
   };
 
   const imageUrl = !imageError && article.urlToImage ? article.urlToImage : getFallbackImage();
+
+  if (variant === 'brief') {
+    return (
+      <motion.article
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="group border-b border-gray-200 dark:border-gray-700 last:border-b-0"
+      >
+        <Link to={`/article/${articleId}`} state={{ article }} className="flex gap-4 py-4">
+          <div className="relative w-24 sm:w-28 aspect-[4/3] shrink-0 overflow-hidden bg-gray-100 dark:bg-gray-800">
+            <img
+              src={imageUrl}
+              alt={article.title}
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              loading="lazy"
+              onError={() => setImageError(true)}
+            />
+          </div>
+          <div className="min-w-0 self-center">
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-300">
+              {article.source?.name || 'News'}
+            </p>
+            <h3 className="font-serif text-base sm:text-lg font-bold leading-snug text-gray-900 dark:text-white line-clamp-2 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">
+              {article.title}
+            </h3>
+            {article.description && (
+              <p className="mt-1 hidden sm:block text-xs leading-relaxed text-gray-600 dark:text-gray-400 line-clamp-2">
+                {article.description}
+              </p>
+            )}
+          </div>
+        </Link>
+      </motion.article>
+    );
+  }
 
   if (variant === 'featured') {
     return (
@@ -91,7 +129,7 @@ export const NewsCard = ({ article, variant = 'default' }) => {
       className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden group hover:shadow-lg transition-all duration-300 h-full flex flex-col"
     >
       <Link to={`/article/${articleId}`} state={{ article }} className="block h-full flex flex-col">
-        <div className="relative h-40 overflow-hidden">
+        <div className="relative aspect-[4/3] overflow-hidden">
           <img
             src={imageUrl}
             alt={article.title}

@@ -24,8 +24,11 @@ export const HeroSection = ({ articles }) => {
     return btoa(encodeURIComponent(article.url || article.title)).substring(0, 20);
   };
 
-  const getFallbackImage = (id = 104) => {
-    return `https://picsum.photos/id/${id}/1200/800`;
+  const getFallbackImage = (article, seed = 104) => {
+    const articleSeed = (article?.url || article?.title || 'news')
+      .split('')
+      .reduce((total, char) => total + char.charCodeAt(0), 0);
+    return `https://picsum.photos/id/${(articleSeed + seed) % 100}/1200/800`;
   };
 
   const handleImageError = (url) => {
@@ -66,13 +69,18 @@ export const HeroSection = ({ articles }) => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-6">
         {/* Main Article */}
         <motion.div variants={itemVariants} className="lg:col-span-2">
-          <article className="relative h-[380px] lg:h-[460px] rounded-xl overflow-hidden group cursor-pointer shadow-lg">
-            <Link to={`/article/${getArticleId(mainArticle)}`} state={{ article: mainArticle }}>
+          <article className="relative h-[420px] sm:h-[480px] xl:h-[560px] rounded-xl overflow-hidden group cursor-pointer shadow-lg">
+            <Link
+              to={`/article/${getArticleId(mainArticle)}`}
+              state={{ article: mainArticle }}
+              className="absolute inset-0 block"
+            >
               <LazyLoadImage
-                src={!imageErrors[mainArticle.url] && mainArticle.urlToImage ? mainArticle.urlToImage : getFallbackImage(104)}
+                src={!imageErrors[mainArticle.url] && mainArticle.urlToImage ? mainArticle.urlToImage : getFallbackImage(mainArticle, 104)}
                 alt={mainArticle.title}
                 effect="blur"
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                wrapperClassName="absolute inset-0 block h-full w-full"
+                className="absolute inset-0 block h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                 onError={() => handleImageError(mainArticle.url)}
               />
               
@@ -130,7 +138,7 @@ export const HeroSection = ({ articles }) => {
                 <div className="flex gap-3 p-3">
                   <div className="relative w-20 h-20 lg:w-24 lg:h-24 flex-shrink-0 overflow-hidden rounded-lg">
                     <LazyLoadImage
-                      src={!imageErrors[article.url] && article.urlToImage ? article.urlToImage : getFallbackImage(20 + index * 10)}
+                      src={!imageErrors[article.url] && article.urlToImage ? article.urlToImage : getFallbackImage(article, 20 + index * 10)}
                       alt={article.title}
                       effect="blur"
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"

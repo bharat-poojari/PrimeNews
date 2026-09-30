@@ -57,7 +57,7 @@
 - **Responsive Design**: Perfectly optimized for desktop, tablet, and mobile devices
 
 ### 📰 **News Features**
-- **Multiple News Sources**: Integrated with NewsAPI, GNews, and MediaStack APIs
+- **Live News**: Headlines aggregated from free publisher RSS feeds; no API key required
 - **Category Filtering**: Browse news by Technology, Business, Sports, Entertainment, Health, Science
 - **Advanced Search**: Full-text search with recent searches and infinite scroll
 - **Trending News**: Curated trending stories from multiple categories
@@ -123,9 +123,8 @@
 ```
 
 ### **API Integrations**
-- **NewsAPI.org** - Primary news source
-- **GNews.io** - Backup news API
-- **MediaStack.com** - Secondary backup API
+- **Publisher RSS/Atom feeds** - BBC News, The Guardian, NPR, Al Jazeera, DW, ESPN, The Verge, The Hindu, and Times of India, selected by category
+- **Google News RSS** - Search results, accessed through the server API route
 
 ---
 
@@ -149,31 +148,17 @@
    npm install
    ```
 
-3. **Create environment file**
-   ```bash
-   cp .env.example .env.local
-   ```
-
-4. **Add your API keys to `.env.local`**
-   ```env
-   VITE_NEWS_API_KEY="your_newsapi_key"
-   VITE_GNEWS_API_KEY="your_gnews_key"
-   VITE_MEDIASTACK_API_KEY="your_mediastack_key"
-   VITE_APP_NAME="PrimeNews"
-   VITE_APP_VERSION="1.0.0"
-   ```
-
-5. **Start development server**
+3. **Start development server**
    ```bash
    npm run dev
    ```
 
-6. **Build for production**
+4. **Build for production**
    ```bash
    npm run build
    ```
 
-7. **Preview production build**
+5. **Preview production build**
    ```bash
    npm run preview
    ```
@@ -182,37 +167,7 @@
 
 ## 🔑 API Integration
 
-### Getting API Keys
-
-#### **NewsAPI.org**
-1. Visit [newsapi.org](https://newsapi.org/)
-2. Sign up for a free account
-3. Copy your API key from the dashboard
-
-#### **GNews.io**
-1. Visit [gnews.io](https://gnews.io/)
-2. Register for a free account
-3. Get your API token
-
-#### **MediaStack.com**
-1. Visit [mediastack.com](https://mediastack.com/)
-2. Sign up for free tier
-3. Copy your access key
-
-### API Features
-
-| API | Free Tier Limits | Features |
-|-----|-----------------|----------|
-| **NewsAPI** | 100 requests/day | Top headlines, everything search |
-| **GNews** | 100 requests/day | Top headlines, search, country filter |
-| **MediaStack** | 500 requests/month | News search, category filtering |
-
-### Fallback System
-The application implements a smart fallback system:
-1. Attempts NewsAPI first
-2. Falls back to GNews if NewsAPI fails
-3. Uses MediaStack as final backup
-4. Returns empty array if all APIs fail (no dummy data)
+Headlines are aggregated through `/api/news` from public RSS, Atom, and RDF feeds published by BBC News, The Guardian, NPR, Al Jazeera, DW, ESPN, The Verge, The Hindu, and Times of India. Search uses the free Google News RSS feed. No API key, subscription, or paid conversion service is required to fetch these feeds. The server normalizes and deduplicates stories, keeps publisher attribution and available images, and caches each feed briefly. Feed availability varies, so one unavailable publisher does not block other sources. Feed access does not grant reuse rights; publisher terms apply. RSS entries provide excerpts, not guaranteed full articles; readers can follow the source link for the complete report. Bundled sample data is used only when no live articles can be retrieved.
 
 ---
 
@@ -233,16 +188,7 @@ The application implements a smart fallback system:
    - Connect your GitHub repository
    - Select "PrimeNews"
 
-3. **Configure Environment Variables**
-   ```env
-   VITE_NEWS_API_KEY=your_key_here
-   VITE_GNEWS_API_KEY=your_key_here
-   VITE_MEDIASTACK_API_KEY=your_key_here
-   VITE_APP_NAME=PrimeNews
-   VITE_APP_VERSION=1.0.0
-   ```
-
-4. **Deploy**
+3. **Deploy**
    - Click "Deploy"
    - Vercel will automatically build and deploy
    - Your site will be live at `https://primenews.vercel.app`
@@ -250,6 +196,8 @@ The application implements a smart fallback system:
 ### **Alternative Hosting**
 
 #### **Netlify**
+The `/api/news` server route must also be hosted as a serverless function for live news to work outside Vercel.
+
 ```bash
 # Install Netlify CLI
 npm install -g netlify-cli
@@ -443,9 +391,7 @@ of this software and associated documentation files...
 
 ## 🙏 Acknowledgments
 
-- **NewsAPI.org** - For providing excellent news data
-- **GNews.io** - For reliable backup API
-- **MediaStack.com** - For additional news source
+- **Google News** - For live headlines and search through RSS
 - **Vercel** - For seamless hosting and deployment
 - **React Community** - For amazing tools and libraries
 - **TailwindCSS** - For utility-first CSS framework

@@ -1,14 +1,15 @@
 // src/pages/CategoryPage.jsx
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FaArrowLeft, FaNewspaper, FaFire } from 'react-icons/fa';
+import { AnimatePresence } from 'framer-motion';
+import { FaArrowLeft, FaNewspaper, FaFire, FaGlobeAsia } from 'react-icons/fa';
 import { NewsCard } from '../components/news/NewsCard';
 import { LoaderSkeleton } from '../components/common/LoaderSkeleton';
 import { newsService } from '../services/api';
 
 const CATEGORY_INFO = {
   general: { name: 'General', color: 'blue', icon: FaNewspaper },
+  india: { name: 'India', color: 'orange', icon: FaGlobeAsia },
   business: { name: 'Business', color: 'green', icon: FaNewspaper },
   technology: { name: 'Technology', color: 'purple', icon: FaNewspaper },
   entertainment: { name: 'Entertainment', color: 'pink', icon: FaNewspaper },

@@ -1,313 +1,299 @@
-// api/news.js
+import { XMLParser } from "fast-xml-parser";
+
+const PAGE_SIZE = 30;
+const FEED_CACHE_TTL = 3 * 60 * 1000;
+const FEED_TIMEOUT_MS = 9000;
+const feedCache = new Map();
+const feedRequests = new Map();
+
+const FEEDS = {
+  general: [
+    { name: "BBC News", url: "https://feeds.bbci.co.uk/news/rss.xml" },
+    { name: "The Guardian", url: "https://www.theguardian.com/world/rss" },
+    { name: "NPR", url: "https://feeds.npr.org/1001/rss.xml" },
+    { name: "Al Jazeera", url: "https://www.aljazeera.com/xml/rss/all.xml" },
+    { name: "DW", url: "https://rss.dw.com/rdf/rss-en-all" },
+  ],
+  world: [
+    { name: "BBC News", url: "https://feeds.bbci.co.uk/news/world/rss.xml" },
+    { name: "The Guardian", url: "https://www.theguardian.com/world/rss" },
+    { name: "Al Jazeera", url: "https://www.aljazeera.com/xml/rss/all.xml" },
+    { name: "DW", url: "https://rss.dw.com/rdf/rss-en-all" },
+  ],
+  nation: [
+    { name: "BBC News", url: "https://feeds.bbci.co.uk/news/world/us_and_canada/rss.xml" },
+    { name: "The Guardian", url: "https://www.theguardian.com/us-news/rss" },
+    { name: "NPR", url: "https://feeds.npr.org/1001/rss.xml" },
+  ],
+  india: [
+    { name: "The Hindu", url: "https://www.thehindu.com/news/national/feeder/default.rss" },
+    { name: "The Times of India", url: "https://timesofindia.indiatimes.com/rssfeeds/-2128936835.cms" },
+    { name: "BBC News", url: "https://feeds.bbci.co.uk/news/world/asia/india/rss.xml" },
+  ],
+  business: [
+    { name: "BBC News", url: "https://feeds.bbci.co.uk/news/business/rss.xml" },
+    { name: "The Guardian", url: "https://www.theguardian.com/business/rss" },
+    { name: "NPR", url: "https://feeds.npr.org/1006/rss.xml" },
+    { name: "DW", url: "https://rss.dw.com/rdf/rss-en-all", topic: "business" },
+  ],
+  technology: [
+    { name: "BBC News", url: "https://feeds.bbci.co.uk/news/technology/rss.xml" },
+    { name: "The Guardian", url: "https://www.theguardian.com/technology/rss" },
+    { name: "The Verge", url: "https://www.theverge.com/rss/index.xml", topic: "technology" },
+    { name: "NPR", url: "https://feeds.npr.org/1019/rss.xml" },
+  ],
+  entertainment: [
+    { name: "BBC News", url: "https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml" },
+    { name: "The Guardian", url: "https://www.theguardian.com/culture/rss" },
+    { name: "The Verge", url: "https://www.theverge.com/rss/index.xml", topic: "entertainment" },
+    { name: "NPR", url: "https://feeds.npr.org/1008/rss.xml" },
+  ],
+  sports: [
+    { name: "BBC Sport", url: "https://feeds.bbci.co.uk/sport/rss.xml" },
+    { name: "The Guardian", url: "https://www.theguardian.com/sport/rss" },
+    { name: "ESPN", url: "https://www.espn.com/espn/rss/news" },
+    { name: "Al Jazeera", url: "https://www.aljazeera.com/xml/rss/all.xml", topic: "sports" },
+  ],
+  science: [
+    { name: "BBC News", url: "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml" },
+    { name: "The Guardian", url: "https://www.theguardian.com/science/rss" },
+    { name: "NPR", url: "https://feeds.npr.org/1007/rss.xml" },
+    { name: "DW", url: "https://rss.dw.com/rdf/rss-en-all", topic: "science" },
+  ],
+  health: [
+    { name: "BBC News", url: "https://feeds.bbci.co.uk/news/health/rss.xml" },
+    { name: "The Guardian", url: "https://www.theguardian.com/society/health/rss" },
+    { name: "NPR", url: "https://feeds.npr.org/1128/rss.xml" },
+  ],
+};
+
+const parser = new XMLParser({
+  ignoreAttributes: false,
+  attributeNamePrefix: "@_",
+  isArray: (name) => name === "item" || name === "entry",
+});
+
 export default async function handler(req, res) {
-  // Set CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") return res.status(200).end();
+  if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
+
+  const { endpoint, category = "general", page = "1", q = "" } = req.query;
+  const normalizedCategory = String(category || "general").toLowerCase();
+  const feeds = resolveFeeds(endpoint, normalizedCategory, q);
+
+  if (!feeds.length) {
+    return res.status(400).json({ error: "Unsupported news request" });
   }
 
-  const { endpoint, category, country, page, q } = req.query;
-  
-  // Use a free news API that actually works
-  // Option 1: Use a proxy to a working news API
-  // Option 2: Use sample data with realistic content
-  
-  console.log('API Request:', { endpoint, category, country, page, q });
-
-  // Since GNews and NewsAPI keys are failing, let's use a combination of:
-  // 1. Free RSS feeds via a proxy
-  // 2. Sample data that looks real
-  
-  if (endpoint === 'top-headlines') {
-    try {
-      // Try multiple free sources
-      const articles = await fetchFromMultipleSources(category, country, page);
-      return res.status(200).json({ articles, totalResults: articles.length });
-    } catch (error) {
-      console.error('Error fetching news:', error);
-      // Return enhanced sample data as fallback
-      const sampleArticles = getEnhancedSampleNews(category);
-      return res.status(200).json({ articles: sampleArticles, totalResults: sampleArticles.length });
-    }
-  }
-  
-  if (endpoint === 'search' && q) {
-    try {
-      const searchResults = await searchFromMultipleSources(q, page);
-      return res.status(200).json({ articles: searchResults, totalResults: searchResults.length });
-    } catch (error) {
-      const sampleSearch = getSampleSearchResults(q);
-      return res.status(200).json({ articles: sampleSearch, totalResults: sampleSearch.length });
-    }
-  }
-  
-  // Fallback
-  const fallbackArticles = getEnhancedSampleNews('general');
-  return res.status(200).json({ articles: fallbackArticles, totalResults: fallbackArticles.length });
-}
-
-// Fetch from multiple free sources
-async function fetchFromMultipleSources(category, country, page) {
-  const articles = [];
-  
-  // Try GNews if key is valid
-  const gnewsKey = process.env.VITE_GNEWS_API_KEY;
-  if (gnewsKey && gnewsKey !== '062379a68af3aea550e5dd82fcf479b3') {
-    try {
-      let url = `https://gnews.io/api/v4/top-headlines?token=${gnewsKey}&country=${country || 'us'}&max=30&page=${page || 1}&lang=en`;
-      if (category && category !== 'general') {
-        url += `&category=${category}`;
-      }
-      const response = await fetch(url);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.articles && data.articles.length > 0) {
-          return data.articles.map(article => ({
-            source: { id: null, name: article.source?.name || 'News' },
-            author: article.author,
-            title: article.title,
-            description: article.description || '',
-            url: article.url,
-            urlToImage: article.image,
-            publishedAt: article.publishedAt,
-            content: article.content,
-          }));
-        }
-      }
-    } catch (e) {
-      console.log('GNews failed:', e.message);
-    }
-  }
-  
-  // Return enhanced sample data
-  return getEnhancedSampleNews(category);
-}
-
-// Enhanced sample news that looks real
-function getEnhancedSampleNews(category) {
-  const newsData = {
-    general: [
-      {
-        source: { name: "Reuters" },
-        title: "Global Economic Forum Announces New Climate Initiatives",
-        description: "World leaders commit to ambitious carbon reduction targets at annual summit.",
-        url: "https://reuters.com/world/climate-summit-2024",
-        urlToImage: "https://picsum.photos/id/104/800/500",
-        publishedAt: new Date().toISOString(),
-        content: "In a landmark decision, participating nations have agreed to accelerate the transition to renewable energy sources..."
-      },
-      {
-        source: { name: "BBC News" },
-        title: "Breakthrough in Cancer Research Offers New Hope",
-        description: "Scientists develop innovative treatment showing promising results in clinical trials.",
-        url: "https://bbc.com/news/health/cancer-breakthrough",
-        urlToImage: "https://picsum.photos/id/116/800/500",
-        publishedAt: new Date(Date.now() - 2 * 3600000).toISOString(),
-        content: "Medical researchers have announced a significant breakthrough in the fight against cancer..."
-      },
-      {
-        source: { name: "CNN" },
-        title: "Tech Giants Announce Major AI Partnership",
-        description: "Leading technology companies join forces to develop ethical AI guidelines.",
-        url: "https://cnn.com/tech/ai-partnership",
-        urlToImage: "https://picsum.photos/id/0/800/500",
-        publishedAt: new Date(Date.now() - 5 * 3600000).toISOString(),
-        content: "Several major tech companies have announced a groundbreaking partnership..."
-      }
-    ],
-    technology: [
-      {
-        source: { name: "TechCrunch" },
-        title: "Apple Unveils Revolutionary AR Glasses",
-        description: "New augmented reality device promises to transform how we interact with digital content.",
-        url: "https://techcrunch.com/apple-ar-glasses",
-        urlToImage: "https://picsum.photos/id/0/800/500",
-        publishedAt: new Date().toISOString(),
-        content: "Apple has announced its most ambitious product yet - AR glasses that blend digital and physical worlds..."
-      },
-      {
-        source: { name: "The Verge" },
-        title: "Quantum Computing Breakthrough Achieved",
-        description: "Scientists achieve stable quantum state at room temperature.",
-        url: "https://theverge.com/quantum-breakthrough",
-        urlToImage: "https://picsum.photos/id/96/800/500",
-        publishedAt: new Date(Date.now() - 3 * 3600000).toISOString(),
-        content: "Researchers have achieved a major milestone in quantum computing..."
-      },
-      {
-        source: { name: "Wired" },
-        title: "The Rise of Generative AI in Creative Industries",
-        description: "How artificial intelligence is transforming art, music, and design.",
-        url: "https://wired.com/generative-ai-creative",
-        urlToImage: "https://picsum.photos/id/106/800/500",
-        publishedAt: new Date(Date.now() - 6 * 3600000).toISOString(),
-        content: "Generative AI is revolutionizing creative workflows across industries..."
-      }
-    ],
-    business: [
-      {
-        source: { name: "Bloomberg" },
-        title: "Global Markets Rally on Positive Economic Data",
-        description: "Stock markets surge as inflation shows signs of cooling.",
-        url: "https://bloomberg.com/markets-rally",
-        urlToImage: "https://picsum.photos/id/20/800/500",
-        publishedAt: new Date().toISOString(),
-        content: "Major indices closed higher following encouraging economic reports..."
-      },
-      {
-        source: { name: "Financial Times" },
-        title: "Central Banks Signal Rate Cuts Ahead",
-        description: "Monetary policy expected to ease as economic growth stabilizes.",
-        url: "https://ft.com/rate-cuts",
-        urlToImage: "https://picsum.photos/id/26/800/500",
-        publishedAt: new Date(Date.now() - 4 * 3600000).toISOString(),
-        content: "Central bankers have indicated that interest rate cuts may be on the horizon..."
-      }
-    ],
-    sports: [
-      {
-        source: { name: "ESPN" },
-        title: "Champions League Final Sets Viewership Records",
-        description: "Historic match draws largest audience in tournament history.",
-        url: "https://espn.com/champions-league-final",
-        urlToImage: "https://picsum.photos/id/145/800/500",
-        publishedAt: new Date().toISOString(),
-        content: "The Champions League final broke multiple viewership records..."
-      }
-    ],
-    entertainment: [
-      {
-        source: { name: "Variety" },
-        title: "Summer Blockbusters Dominate Box Office",
-        description: "Record-breaking weekend as multiple films exceed expectations.",
-        url: "https://variety.com/summer-blockbusters",
-        urlToImage: "https://picsum.photos/id/106/800/500",
-        publishedAt: new Date().toISOString(),
-        content: "The summer movie season is off to an explosive start..."
-      }
-    ],
-    science: [
-      {
-        source: { name: "Nature" },
-        title: "NASA Announces New Exoplanet Discovery",
-        description: "Earth-like planet found in habitable zone of nearby star system.",
-        url: "https://nature.com/exoplanet-discovery",
-        urlToImage: "https://picsum.photos/id/96/800/500",
-        publishedAt: new Date().toISOString(),
-        content: "Astronomers have discovered a promising Earth-like exoplanet..."
-      }
-    ],
-    health: [
-      {
-        source: { name: "Medical News Today" },
-        title: "New Vaccine Shows 95% Effectiveness",
-        description: "Revolutionary vaccine technology proves highly effective in trials.",
-        url: "https://medicalnewstoday.com/vaccine-breakthrough",
-        urlToImage: "https://picsum.photos/id/116/800/500",
-        publishedAt: new Date().toISOString(),
-        content: "A new approach to vaccine development has shown remarkable results..."
-      }
-    ]
-  };
-
-  const baseArticles = newsData[category] || newsData.general;
-  const articles = [];
-  
-  // Generate 12-24 articles by duplicating with variations
-  for (let i = 0; i < 12; i++) {
-    const base = baseArticles[i % baseArticles.length];
-    articles.push({
-      ...base,
-      title: `${base.title}${i > 0 ? ` - Update ${i + 1}` : ''}`,
-      publishedAt: new Date(Date.now() - i * 3600000).toISOString(),
-      url: `${base.url}/${i}`,
-    });
-  }
-  
-  return articles;
-}
-
-function getSampleSearchResults(query) {
-  const results = [];
-  for (let i = 0; i < 10; i++) {
-    results.push({
-      source: { name: "News Source" },
-      title: `${query} - Latest News Update ${i + 1}`,
-      description: `Latest developments and breaking news about ${query}. Stay informed with our comprehensive coverage.`,
-      url: `#search-${i}`,
-      urlToImage: `https://picsum.photos/id/${(i * 20) % 100}/800/500`,
-      publishedAt: new Date(Date.now() - i * 3600000).toISOString(),
-      content: `Full coverage of ${query} news and updates...`,
-    });
-  }
-  return results;
-}
-// Add this to your api/news.js
-async function fetchFromNewsData(category, country, page) {
-  const apiKey = process.env.VITE_NEWSDATA_API_KEY;
-  if (!apiKey) return null;
-  
   try {
-    let url = `https://newsdata.io/api/1/news?apikey=${apiKey}&country=${country || 'us'}&language=en&size=30&page=${page || 1}`;
-    if (category && category !== 'general') {
-      url += `&category=${category}`;
+    const pageNumber = Math.max(1, Number.parseInt(page, 10) || 1);
+    const feedResults = await Promise.allSettled(feeds.map(fetchFeed));
+    feedResults.forEach((result, index) => {
+      if (result.status === "rejected") {
+        console.warn(`${feeds[index].name} feed unavailable: ${result.reason.message}`);
+      }
+    });
+    const articles = deduplicateArticles(
+      feedResults.flatMap((result) => result.status === "fulfilled" ? result.value : [])
+    );
+
+    if (articles.length === 0) {
+      return res.status(502).json({ error: "Live news is temporarily unavailable" });
     }
-    
-    const response = await fetch(url);
-    const data = await response.json();
-    
-    if (data.status === 'success' && data.results) {
-      return data.results.map(article => ({
-        source: { id: null, name: article.source_id || article.source_name || 'News' },
-        author: article.creator?.[0] || null,
-        title: article.title,
-        description: article.description || '',
-        url: article.link,
-        urlToImage: article.image_url,
-        publishedAt: article.pubDate,
-        content: article.content,
-      }));
-    }
-    return null;
-  } catch (e) {
-    console.log('NewsData.io error:', e.message);
-    return null;
+
+    const startIndex = (pageNumber - 1) * PAGE_SIZE;
+    res.setHeader("Cache-Control", "s-maxage=120, stale-while-revalidate=300");
+    return res.status(200).json({
+      articles: articles.slice(startIndex, startIndex + PAGE_SIZE),
+      totalResults: articles.length,
+      sources: [...new Set(articles.map((article) => article.source.name))],
+    });
+  } catch (error) {
+    console.error("Live news request failed:", error.message);
+    return res.status(502).json({ error: "Live news is temporarily unavailable" });
   }
 }
 
-async function searchFromMultipleSources(query, page) {
-  // Try GNews search if key is valid
-  const gnewsKey = process.env.VITE_GNEWS_API_KEY;
-  if (gnewsKey && gnewsKey !== '062379a68af3aea550e5dd82fcf479b3') {
-    try {
-      const url = `https://gnews.io/api/v4/search?token=${gnewsKey}&q=${encodeURIComponent(query)}&max=30&page=${page || 1}&lang=en`;
-      const response = await fetch(url);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.articles && data.articles.length > 0) {
-          return data.articles.map(article => ({
-            source: { id: null, name: article.source?.name || 'News' },
-            author: article.author,
-            title: article.title,
-            description: article.description || '',
-            url: article.url,
-            urlToImage: article.image,
-            publishedAt: article.publishedAt,
-            content: article.content,
-          }));
-        }
-      }
-    } catch (e) {
-      console.log('GNews search failed:', e.message);
-    }
+function resolveFeeds(endpoint, category, query) {
+  if (endpoint === "top-headlines") {
+    return FEEDS[category] || FEEDS.general;
   }
-  
-  return getSampleSearchResults(query);
+
+  if (endpoint === "search" && String(query || "").trim()) {
+    const searchTerm = encodeURIComponent(String(query).trim());
+    return [{ name: "Google News", url: `https://news.google.com/rss/search?q=${searchTerm}&hl=en-US&gl=US&ceid=US:en` }];
+  }
+
+  return [];
+}
+
+async function fetchFeed(feed) {
+  const cacheKey = `${feed.url}::${feed.topic || ""}`;
+  const cached = feedCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached.articles;
+  if (feedRequests.has(cacheKey)) return feedRequests.get(cacheKey);
+
+  const request = loadFeed(feed)
+    .then((articles) => {
+      feedCache.set(cacheKey, { articles, expiresAt: Date.now() + FEED_CACHE_TTL });
+      return articles;
+    })
+    .catch((error) => {
+      if (cached?.articles.length) return cached.articles;
+      throw error;
+    })
+    .finally(() => feedRequests.delete(cacheKey));
+
+  feedRequests.set(cacheKey, request);
+  return request;
+}
+
+async function loadFeed(feed) {
+  const response = await fetch(feed.url, {
+    headers: {
+      "User-Agent": "PrimeNews/1.0 (news reader)",
+      Accept: "application/rss+xml, application/atom+xml, application/rdf+xml, application/xml, text/xml",
+    },
+    signal: AbortSignal.timeout(FEED_TIMEOUT_MS),
+  });
+
+  if (!response.ok) throw new Error(`${feed.name} feed returned ${response.status}`);
+
+  const parsed = parser.parse(await response.text());
+  const rssChannel = parsed.rss?.channel;
+  const atomFeed = parsed.feed;
+  const rdfFeed = parsed["rdf:RDF"];
+  const items = rssChannel?.item || atomFeed?.entry || rdfFeed?.item || [];
+
+  return items
+    .filter((item) => !feed.topic || matchesTopic(item, feed.topic))
+    .map((item) => normalizeArticle(item, feed))
+    .filter((article) => article.title && /^https?:\/\//i.test(article.url));
+}
+
+function matchesTopic(item, topic) {
+  const categories = Array.isArray(item.category) ? item.category : [item.category];
+  const labels = [item["dc:subject"], ...categories]
+    .map((value) => {
+      if (value && typeof value === "object") return value["@_term"] || value["#text"] || "";
+      return value || "";
+    })
+    .map((value) => plainText(value).toLowerCase());
+  const terms = {
+    business: ["business", "economy", "economics", "finance", "financial", "markets"],
+    sports: ["sport", "sports"],
+    science: ["science", "environment", "climate"],
+    technology: ["technology", "tech", "gadgets", "ai", "software", "computing", "mobile"],
+    entertainment: ["entertainment", "culture", "film", "music", "streaming", "television", "movies"],
+  }[topic] || [topic];
+
+  return labels.some((label) => terms.some((term) => label.includes(term)));
+}
+
+function normalizeArticle(item, feed) {
+  const content = textValue(item["content:encoded"] || item.content);
+  const description = plainText(item.description || item.summary || content);
+  const atomLink = Array.isArray(item.link)
+    ? item.link.find((link) => link["@_rel"] === "alternate") || item.link[0]
+    : item.link;
+  const url = textValue(atomLink?.["@_href"] || atomLink || item.guid || item.id);
+  const sourceName = plainText(item.source || feed.name);
+  const image = findImage(item, content || textValue(item.description) || textValue(item.summary));
+
+  return {
+    source: { id: null, name: sourceName || feed.name, url: feed.url },
+    author: plainText(item["dc:creator"] || item.creator || item.author?.name || item.author) || null,
+    title: plainText(item.title),
+    description,
+    url,
+    urlToImage: image,
+    publishedAt: textValue(item.pubDate || item.published || item.updated || item["dc:date"]) || new Date().toISOString(),
+    content: plainText(content) || description,
+  };
+}
+
+function textValue(value) {
+  if (value == null) return "";
+  if (Array.isArray(value)) return textValue(value[0]);
+  if (typeof value === "object") return textValue(value["#text"] ?? value["__cdata"] ?? "");
+  return String(value);
+}
+
+function plainText(value = "") {
+  return textValue(value)
+    .replace(/\\u003c/gi, "<")
+    .replace(/\\u003e/gi, ">")
+    .replace(/\\u0026/gi, "&")
+    .replace(/\\u0027/gi, "'")
+    .replace(/\\u0022/gi, '"')
+    .replace(/\\u00a0/gi, " ")
+    .replace(/&nbsp;|&#160;|&#xA0;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;|&rsquo;|&#8217;|&lsquo;|&#8216;/gi, "'")
+    .replace(/&ldquo;|&rdquo;|&#8220;|&#8221;/gi, '"')
+    .replace(/&ndash;|&mdash;|&#8211;|&#8212;/gi, "-")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&hellip;/gi, "\u2026")
+    .replace(/&#(x[\da-f]+|\d+);/gi, (entity, code) => {
+      const isHex = code[0].toLowerCase() === "x";
+      const codePoint = Number.parseInt(isHex ? code.slice(1) : code, isHex ? 16 : 10);
+      return codePoint <= 0x10ffff ? String.fromCodePoint(codePoint) : entity;
+    })
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function findImage(item, html = "") {
+  const mediaCandidates = [item["media:thumbnail"], item["media:content"], item.enclosure, item["itunes:image"]];
+  for (const candidate of mediaCandidates) {
+    const imageUrl = imageUrlFrom(candidate);
+    if (imageUrl) return upgradeImageUrl(imageUrl);
+  }
+
+  const imageMatch = html.match(/<img\b[^>]*\bsrc=["']([^"']+)["']/i);
+  return imageMatch?.[1] ? upgradeImageUrl(imageMatch[1].replace(/&amp;/g, "&")) : null;
+}
+
+function imageUrlFrom(value) {
+  if (Array.isArray(value)) {
+    for (const candidate of value) {
+      const url = imageUrlFrom(candidate);
+      if (url) return url;
+    }
+    return null;
+  }
+  if (typeof value === "string") return value;
+  if (!value || typeof value !== "object") return null;
+
+  return value["@_url"] || value["@_href"] || value.url || value.link || null;
+}
+
+function upgradeImageUrl(url) {
+  return String(url)
+    .replace("/standard/240/", "/standard/1024/")
+    .replace(/([?&]width=)\d+/i, (_, parameter) => `${parameter}1000`);
+}
+
+function deduplicateArticles(articles) {
+  const seenUrls = new Set();
+  const seenTitles = new Set();
+
+  return articles
+    .filter((article) => {
+      const normalizedUrl = article.url.split("?")[0].replace(/\/$/, "").toLowerCase();
+      const normalizedTitle = article.title.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+      if (seenUrls.has(normalizedUrl) || seenTitles.has(normalizedTitle)) return false;
+      seenUrls.add(normalizedUrl);
+      seenTitles.add(normalizedTitle);
+      return true;
+    })
+    .sort((left, right) => Date.parse(right.publishedAt) - Date.parse(left.publishedAt));
 }

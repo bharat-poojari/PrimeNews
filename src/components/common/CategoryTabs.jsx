@@ -9,6 +9,7 @@ import {
   FaFutbol, 
   FaFlask, 
   FaHeartbeat,
+  FaGlobeAsia,
   FaChevronLeft,
   FaChevronRight
 } from 'react-icons/fa';
@@ -20,6 +21,7 @@ export const CategoryTabs = ({ onCategorySelect, activeCategory = 'general' }) =
   
   const CATEGORIES = [
     { id: "general", name: "General", icon: FaNewspaper, color: "blue" },
+    { id: "india", name: "India", icon: FaGlobeAsia, color: "orange" },
     { id: "business", name: "Business", icon: FaBriefcase, color: "green" },
     { id: "technology", name: "Technology", icon: FaLaptopCode, color: "purple" },
     { id: "entertainment", name: "Entertainment", icon: FaFilm, color: "pink" },
